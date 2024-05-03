@@ -1,0 +1,1788 @@
+"use client";
+import { BiSolidGroup } from "react-icons/bi";
+import { RiFileExcel2Fill, RiLoader2Fill } from "react-icons/ri";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  ArcElement,
+  Legend,
+  Point
+} from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
+import Loader from "@/components/common/Loader";
+import useSWR from "swr";
+import useAxiosAuth from "@/hooks/useAxiosAuth";
+import * as FileSaver from 'file-saver';
+import XLSX from 'sheetjs-style';
+import { AwaitedReactNode, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, useEffect, useState } from "react";
+import useChangeHeaderTitle from "../hooks/useChangedHeader";
+import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
+import { FaClipboardList } from "react-icons/fa";
+import { BsStickyFill } from "react-icons/bs";
+import { CiFilter } from "react-icons/ci";
+import { Menu, MenuItem } from "@mui/material";
+import { format } from 'date-fns';
+import { fr } from "date-fns/locale/fr";
+import toast from "react-hot-toast";
+import { MdOutlineTimelapse, MdTimer } from "react-icons/md";
+import 'chart.js/auto';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
+
+const Home = () => {
+  const url = `/appointment/stats`;
+  const axiosAuth = useAxiosAuth();
+  const now = new Date();
+  now.setHours(0, 0, 0, 0);
+  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR') })).then((res) => res.data));
+  const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+  const fileExtension = '.xlsx';
+  const useChangeTitle = useChangeHeaderTitle();
+  useEffect(() => {
+    useChangeTitle.onChanged("Tableau de bord");
+  }, [result]);
+  const emptyStats: Stats = {
+    subServices: 0,
+    services: 0,
+    receives: 0,
+    appointments: 0,
+    appointmentsByService: [],
+    appointmentList: [],
+    appointmentsByStatut: [],
+    months: [],
+    weeks: [],
+    years: [],
+    waitings: 0,
+    meanWaitingTime: 0,
+    meanServingTime: 0,
+    totalInWaiting: 0,
+    totatlInServing: 0,
+    totalNotInWaiting: 0,
+    totatlNotInServing: 0,
+    serveAppointmentsByService: [],
+    waitingAppointmentsByService: [],
+    meanWaitingTimeByService: [],
+    meanServingTimeByService: [],
+    totatlInWaitingByService: [],
+    totatlNotInWaitingByService: [],
+    totatlInServingByService: [],
+    totatlNotInServingByService: [],
+    appointmentsBySubService: [],
+    serveAppointmentsBySubService: [],
+    waitingAppointmentsBySubService: [],
+    meanWaitingTimeBySubService: [],
+    meanServingTimeBySubService: [],
+    totatlInWaitingBySubService: [],
+    totatlNotInWaitingBySubService: [],
+    totatlInServingBySubService: [],
+    totatlNotInServingBySubService: [],
+    appointmentsByHourSlot: [],
+    serveAppointmentsByHourSlot: []
+  }
+
+  const [filterStats, setFilterStats] = useState(emptyStats);
+  const [filter, setFilter] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [seeAll, setSeeAll] = useState(false);
+  const [description, setDescription] = useState('');
+  const [anchorWeekElFilter, setAnchorWeekElFilter] = useState(null);
+  const openWeekMenuFilter = Boolean(anchorWeekElFilter);
+
+  const [anchorMonthElFilter, setAnchorMonthElFilter] = useState(null);
+  const openMonthMenuFilter = Boolean(anchorMonthElFilter);
+
+  const [anchorYearElFilter, setAnchorYearElFilter] = useState(null);
+  const openYearMenuFilter = Boolean(anchorYearElFilter);
+
+  const handleWeekClickFilter = (event: any) => {
+    setAnchorWeekElFilter(event.currentTarget);
+  };
+
+  const handleMonthClickFilter = (event: any) => {
+    setAnchorMonthElFilter(event.currentTarget);
+  };
+
+  const handleYearClickFilter = (event: any) => {
+    setAnchorYearElFilter(event.currentTarget);
+  };
+
+
+
+  const handleFilter = async (date: string) => {
+    setDescription(`Ceci represente l'ensemble des données à la date du ${date}`)
+
+    try {
+      setFilter(true);
+      setLoading(true);
+      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date }));
+      if (res.status == 200) {
+        console.log(res);
+
+        setFilterStats(res.data);
+      }
+    } catch (error) {
+      setFilter(false);
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+    } finally {
+      setLoading(false);
+      setAnchorMonthElFilter(null);
+      setAnchorYearElFilter(null);
+    }
+  };
+
+  const handleWeekFilter = async (start: string, end: string) => {
+    setDescription(`Ceci represente l'ensemble des données de ${start} à ${end}`)
+
+    try {
+      setFilter(true);
+      setLoading(true);
+      const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end }));
+      if (res.status == 200) {
+        setFilterStats(res.data);
+      }
+    } catch (error) {
+      setFilter(false);
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+    } finally {
+      setLoading(false);
+      setAnchorWeekElFilter(null);
+    }
+  };
+
+  const handleCloseWeekMenuFilter = () => {
+    setAnchorWeekElFilter(null);
+  };
+  const handleCloseMonthMenuFilter = () => {
+    setAnchorMonthElFilter(null);
+  };
+  const handleCloseYearMenuFilter = () => {
+    setAnchorYearElFilter(null);
+  };
+
+  const exportToExcel = async () => {
+    const appointments: any = [];
+    let stats: any;
+    if (filter) {
+      stats = filterStats;
+    } else {
+      stats = result;
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    if (stats) {
+      // Ajouter le titre et la description sur des lignes distinctes
+      const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } }; // Style personnalisé pour le titre
+      const title = { '': { v: 'Titre du fichier Excel', s: titleStyle } };
+      const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } }; // Style personnalisé pour la description
+      const descript = { '': { v: description, s: descriptionStyle } };
+      appointments.push(title, descript);
+
+      // Ajouter un saut de ligne avant les en-têtes
+      const jump1 = { '': '' };
+      appointments.push(jump1);
+
+      // Ajouter les en-têtes des colonnes
+
+      const headers = {
+        'Heure d\'arrivée': 'Heure d\'arrivée',
+        'No d\'arrivée': 'No d\'arrivée',
+        'No de ticket': 'No de ticket',
+        'Service': 'Service',
+        "Point d'appel": "Point d'appel",
+        "Heure d'appel": "Heure d'appel",
+        "Temps d'attente": "Temps d'attente",
+        'Temps de traitement': "Temps de traitement",
+        "Ticket transféré": "Ticket transféré",
+        "Ticket sauté": "Ticket sauté"
+      };
+      appointments.push(headers);
+      // Ajouter les données
+      for (let index = 0; index < stats.appointmentList.length; index++) {
+        const element = stats.appointmentList[index];
+        const data = {
+          'Heure d\'arrivée': element.time,
+          'No d\'arrivée': element.id,
+          'No de ticket': element.num,
+          'Service': element.Service ? element.Service.name : '',
+          "Point d'appel": element.Subservice ? element.Subservice.name : '',
+          'Heure d\'appel': element.callTime,
+          'Temps d\'attente': format(element.waitingTime * 60 * 1000, 'HH:mm:ss'),
+          'Temps de traitement': format(element.processingTime * 60 * 1000, 'HH:mm:ss'),
+          "Ticket transféré": element.transfered ? "Oui" : "Non",
+          "Ticket sauté": element.missing ? "Oui" : "Non"
+        };
+        appointments.push(data);
+      }
+
+      const services: any = [];
+      const title2 = { '': { v: 'Nombre de tickets par Service', s: titleStyle } };
+      services.push(title2, descript);
+
+      for (let index = 0; index < stats.appointmentsByService.length; index++) {
+        const element = stats.appointmentsByService[index];
+        const serviceTitle = { '': { v: element.name, s: titleStyle } };
+        services.push(serviceTitle);
+        const newL = { '': '\n' };
+        services.push(newL);
+        const headers2 = {
+          'Reçu': 'Reçu',
+          'Traité': 'Traité',
+          'En attente': 'En attente'
+        };
+        services.push(headers2);
+        const data = {
+          'Reçu': element.amount ? element.amount : 0,
+          'Traité': stats.serveAppointmentsByService[index]?.amount ? stats.serveAppointmentsByService[index]?.amount : 0,
+          'En attente': stats.waitingAppointmentsByService[index]?.amount ? stats.waitingAppointmentsByService[index]?.amount : 0
+        };
+        services.push(data);
+      }
+
+      const gloabl: any = [];
+      const globalTitle = { '': { v: 'Données globales', s: titleStyle } };
+      gloabl.push(globalTitle, descript);
+      gloabl.push(jump1);
+      const gHeaders = {
+        'Services': 'Services',
+        'Points d\'appels': 'Points d\'appels',
+        'Tickets traités': 'Tickets traités',
+        'Tickets en attente': 'Tickets en attente',
+        'Total tickets': 'Total tickets'
+      };
+      gloabl.push(gHeaders);
+      gloabl.push({
+        'Services': stats.receives,
+        'Points d\'appels': stats.subServices,
+        'Tickets traités': stats.receives,
+        'Tickets en attente': stats.waitings,
+        'Total tickets': stats.appointments
+      });
+
+      const globalTime: any = [];
+      const globalTimeTitle = { '': { v: 'Données globalTimes', s: titleStyle } };
+      globalTime.push(globalTimeTitle, descript);
+      globalTime.push(jump1);
+      const gTHeaders = {
+        'Temps moyen d\'attente': 'Temps moyen d\'attente',
+        'Temps moyen de traitement': 'Temps moyen de traitement',
+        'Ticket dans le temps optimal d\'attente': 'Ticket dans le temps optimal d\'attente',
+        'Ticket en dehors du temps optimal d\'attente': 'Ticket en dehors du temps optimal d\'attente',
+        'Ticket dans le temps optimal de traitement': 'Ticket dans le temps optimal de traitement',
+        'Ticket en dehors du temps optimal de traitement': 'Ticket en dehors du temps optimal de traitement'
+      };
+      globalTime.push(gTHeaders);
+      globalTime.push({
+        'Temps moyen d\'attente': stats.meanWaitingTime,
+        'Temps moyen de traitement': stats.meanServingTime,
+        'Ticket dans le temps optimal d\'attente': stats.totalInWaiting,
+        'Ticket en dehors du temps optimal d\'attente': stats.totalNotInWaiting,
+        'Ticket dans le temps optimal de traitement': stats.totatlInServing,
+        'Ticket en dehors du temps optimal de traitement': stats.totatlNotInServing
+      });
+
+      const meanTimeService: any = [];
+      const meanTimeServiceTitle = { '': { v: 'Temps moyen d\'attente Par Service', s: titleStyle } };
+      meanTimeService.push(meanTimeServiceTitle, descript);
+      meanTimeService.push(jump1);
+      const serviceNames = stats.appointmentsByService.map((service: { name: any; }) => service.name);
+
+      // En-tête des colonnes avec les noms des services
+      const headerRow: any = {};
+      serviceNames.forEach((name: string | number) => {
+        headerRow[name] = name;
+      });
+
+      meanTimeService.push(headerRow);
+      const mTSData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const meanWaitingTime = stats.meanWaitingTimeByService.find((item: { name: any; }) => item.name === name);
+        if (meanWaitingTime) {
+          mTSData[name] = format(meanWaitingTime.amount * 60 * 1000, 'HH:mm:ss');
+        } else {
+          mTSData[name] = '00:00:00';
+        }
+      });
+
+      meanTimeService.push(mTSData);
+
+      const meanServingTimeService: any = [];
+      const meanServingTimeServiceTitle = { '': { v: 'Temps moyen de traitement Par Service', s: titleStyle } };
+      meanServingTimeService.push(meanServingTimeServiceTitle, descript);
+      meanServingTimeService.push(jump1);
+
+      meanServingTimeService.push(headerRow);
+      const mSData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const meanServingTime = stats.meanServingTimeByService.find((item: { name: any; }) => item.name === name);
+        if (meanServingTime) {
+          mSData[name] = format(meanServingTime.amount * 60 * 1000, 'HH:mm:ss');
+        } else {
+          mSData[name] = '00:00:00';
+        }
+      });
+
+      meanServingTimeService.push(mSData);
+
+      const inWaitingTimeService: any = [];
+      const inWaitingTimeServiceTitle = { '': { v: 'Le nombre de ticket dans le temps optimal d\'attente par Service', s: titleStyle } };
+      inWaitingTimeService.push(inWaitingTimeServiceTitle, descript);
+      inWaitingTimeService.push(jump1);
+
+      inWaitingTimeService.push(headerRow);
+      const inWData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const inWaitingTime = stats.totatlInWaitingByService.find((item: { name: any; }) => item.name === name);
+        if (inWaitingTime) {
+          inWData[name] = inWaitingTime.amount;
+
+        } else {
+          inWData[name] = '00:00:00';
+        }
+      });
+
+      inWaitingTimeService.push(inWData);
+
+      const notInWaitingTimeService: any = [];
+      const notInWaitingTimeServiceTitle = { '': { v: 'Le nombre de ticket en dehors du temps optimal d\'attente par Service', s: titleStyle } };
+      notInWaitingTimeService.push(notInWaitingTimeServiceTitle, descript);
+      notInWaitingTimeService.push(jump1);
+
+      notInWaitingTimeService.push(headerRow);
+      const notInWData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const notInWaitingTime = stats.totatlNotInWaitingByService.find((item: { name: any; }) => item.name === name);
+        if (notInWaitingTime) {
+          notInWData[name] = notInWaitingTime.amount;
+
+        } else {
+          notInWData[name] = '00:00:00';
+        }
+      });
+
+      notInWaitingTimeService.push(notInWData);
+
+      const inServingTimeService: any = [];
+      const inServingTimeServiceTitle = { '': { v: 'Le nombre de ticket dans le temps optimal de traitement par Service', s: titleStyle } };
+      inServingTimeService.push(inServingTimeServiceTitle, descript);
+      inServingTimeService.push(jump1);
+
+      inServingTimeService.push(headerRow);
+      const inSData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const inServingTime = stats.totatlInServingByService.find((item: { name: any; }) => item.name === name);
+        if (inServingTime) {
+          inSData[name] = inServingTime.amount;
+
+        } else {
+          inSData[name] = '00:00:00';
+        }
+      });
+
+      inServingTimeService.push(inSData);
+
+      const notInServingTimeService: any = [];
+      const notInServingTimeServiceTitle = { '': { v: 'Le nombre de ticket en dehors du temps optimal de traitement par Service', s: titleStyle } };
+      notInServingTimeService.push(notInServingTimeServiceTitle, descript);
+      notInServingTimeService.push(jump1);
+
+      notInServingTimeService.push(headerRow);
+      const notInSData: any = {};
+      serviceNames.forEach((name: string | number) => {
+        const notInServingTime = stats.totatlNotInServingByService.find((item: { name: any; }) => item.name === name);
+        if (notInServingTime) {
+          notInSData[name] = notInServingTime.amount;
+
+        } else {
+          notInSData[name] = '00:00:00';
+        }
+      });
+
+      notInServingTimeService.push(notInSData);
+
+      const subServices: any = [];
+      const subTitle = { '': { v: 'Nombre de tickets par Point d\'appel', s: titleStyle } };
+      subServices.push(subTitle, descript);
+
+      for (let index = 0; index < stats.appointmentsBySubService.length; index++) {
+        const element = stats.appointmentsBySubService[index];
+        const serviceTitle = { '': { v: element.name, s: titleStyle } };
+        subServices.push(serviceTitle);
+        const newL = { '': '\n' };
+        subServices.push(newL);
+        const headers2 = {
+          'Reçu': 'Reçu',
+          'Traité': 'Traité',
+          'En attente': 'En attente'
+        };
+        subServices.push(headers2);
+        const data = {
+          'Reçu': element.amount ? element.amount : 0,
+          'Traité': stats.serveAppointmentsBySubService[index]?.amount ? stats.serveAppointmentsBySubService[index]?.amount : 0,
+          'En attente': stats.waitingAppointmentsBySubService[index]?.amount ? stats.waitingAppointmentsBySubService[index]?.amount : 0
+        };
+        subServices.push(data);
+      }
+
+      const meanTimeSubService: any = [];
+      const meanTimeSubServiceTitle = { '': { v: 'Temps moyen d\'attente Par Point d\'appel', s: titleStyle } };
+      meanTimeSubService.push(meanTimeSubServiceTitle, descript);
+      meanTimeSubService.push(jump1);
+      const subServiceNames = stats.appointmentsBySubService.map((service: { name: any; }) => service.name);
+
+      // En-tête des colonnes avec les noms des services
+      const subServiceHeaderRow: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        subServiceHeaderRow[name] = name;
+      });
+
+      meanTimeSubService.push(subServiceHeaderRow);
+      const mTSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const meanWaitingTime = stats.meanWaitingTimeBySubService.find((item: { name: any; }) => item.name === name);
+        if (meanWaitingTime) {
+          mTSubData[name] = format(meanWaitingTime.amount * 60 * 1000, 'HH:mm:ss');
+        } else {
+          mTSubData[name] = '00:00:00';
+        }
+      });
+
+      meanTimeSubService.push(mTSubData);
+
+      const meanServingTimeSubService: any = [];
+      const meanServingTimeSubServiceTitle = { '': { v: 'Temps moyen de traitement Par Point d\'appel', s: titleStyle } };
+      meanServingTimeSubService.push(meanServingTimeSubServiceTitle, descript);
+      meanServingTimeSubService.push(jump1);
+
+      meanServingTimeSubService.push(subServiceHeaderRow);
+      const mSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const meanServingTime = stats.meanServingTimeBySubService.find((item: { name: any; }) => item.name === name);
+        if (meanServingTime) {
+          mSubData[name] = format(meanServingTime.amount * 60 * 1000, 'HH:mm:ss');
+        } else {
+          mSubData[name] = '00:00:00';
+        }
+      });
+
+      meanServingTimeSubService.push(mSubData);
+
+      const inWaitingTimeSubservice: any = [];
+      const inWaitingTimeSubserviceTitle = { '': { v: 'Le nombre de ticket dans le temps optimal d\'attente par Point d\'appel', s: titleStyle } };
+      inWaitingTimeSubservice.push(inWaitingTimeSubserviceTitle, descript);
+      inWaitingTimeSubservice.push(jump1);
+
+      inWaitingTimeSubservice.push(subServiceHeaderRow);
+      const inWSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const inWaitingTime = stats.totatlInWaitingBySubService.find((item: { name: any; }) => item.name === name);
+        if (inWaitingTime) {
+          inWSubData[name] = inWaitingTime.amount;
+
+        } else {
+          inWSubData[name] = '00:00:00';
+        }
+      });
+
+      inWaitingTimeSubservice.push(inWSubData);
+
+      const notInWaitingTimeSubservice: any = [];
+      const notInWaitingTimeSubserviceTitle = { '': { v: 'Le nombre de ticket en dehors du temps optimal de traitement par Point d\'appel', s: titleStyle } };
+      notInWaitingTimeSubservice.push(notInWaitingTimeSubserviceTitle, descript);
+      notInWaitingTimeSubservice.push(jump1);
+
+      notInWaitingTimeSubservice.push(subServiceHeaderRow);
+      const notInSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const notInServingTime = stats.totatlNotInServingBySubService.find((item: { name: any; }) => item.name === name);
+        if (notInServingTime) {
+          notInSubData[name] = notInServingTime.amount;
+
+        } else {
+          notInSubData[name] = '00:00:00';
+        }
+      });
+
+      notInWaitingTimeSubservice.push(notInSubData);
+
+      const inServingTimeSubservice: any = [];
+      const inServingTimeSubserviceTitle = { '': { v: 'Le nombre de ticket dans le temps optimal de traitement par Point d\'appel', s: titleStyle } };
+      inServingTimeSubservice.push(inServingTimeSubserviceTitle, descript);
+      inServingTimeSubservice.push(jump1);
+
+      inServingTimeSubservice.push(subServiceHeaderRow);
+      const inSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const inServingTime = stats.totatlInServingBySubService.find((item: { name: any; }) => item.name === name);
+        if (inServingTime) {
+          inSubData[name] = inServingTime.amount;
+
+        } else {
+          inSubData[name] = '00:00:00';
+        }
+      });
+
+      inServingTimeSubservice.push(inSubData);
+
+      const notInServingTimeSubservice: any = [];
+      const notInServingTimeSubserviceTitle = { '': { v: 'Le nombre de ticket en dehors du temps optimal de traitement par Point d\'appel', s: titleStyle } };
+      notInServingTimeSubservice.push(notInServingTimeSubserviceTitle, descript);
+      notInServingTimeSubservice.push(jump1);
+
+      notInServingTimeSubservice.push(subServiceHeaderRow);
+      const notInServSubData: any = {};
+      subServiceNames.forEach((name: string | number) => {
+        const notInServingTime = stats.totatlNotInServingBySubService.find((item: { name: string | number; }) => item.name === name);
+        if (notInServingTime) {
+          notInServSubData[name] = notInServingTime.amount;
+
+        } else {
+          notInServSubData[name] = '00:00:00';
+        }
+      });
+
+      notInServingTimeSubservice.push(notInServSubData);
+
+      // Convertir les données en feuille de calcul
+      const gWs = XLSX.utils.json_to_sheet(gloabl, { skipHeader: true });
+      const gTWs = XLSX.utils.json_to_sheet(globalTime, { skipHeader: true });
+      const appWs = XLSX.utils.json_to_sheet(appointments, { skipHeader: true });
+      const servicesWs = XLSX.utils.json_to_sheet(services, { skipHeader: true });
+      const mTWs = XLSX.utils.json_to_sheet(meanTimeService, { skipHeader: true });
+      const mSWs = XLSX.utils.json_to_sheet(meanServingTimeService, { skipHeader: true });
+      const inMWs = XLSX.utils.json_to_sheet(inWaitingTimeService, { skipHeader: true });
+      const notInMWs = XLSX.utils.json_to_sheet(notInWaitingTimeService, { skipHeader: true });
+      const inMSs = XLSX.utils.json_to_sheet(inServingTimeService, { skipHeader: true });
+      const notInMSs = XLSX.utils.json_to_sheet(notInServingTimeService, { skipHeader: true });
+      const subServicesWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
+      const mTWsub = XLSX.utils.json_to_sheet(meanTimeSubService, { skipHeader: true });
+      const mSWsub = XLSX.utils.json_to_sheet(meanServingTimeSubService, { skipHeader: true });
+      const inMWSub = XLSX.utils.json_to_sheet(inWaitingTimeSubservice, { skipHeader: true });
+      const notInMWSub = XLSX.utils.json_to_sheet(notInWaitingTimeSubservice, { skipHeader: true });
+      const inMSsub = XLSX.utils.json_to_sheet(inServingTimeSubservice, { skipHeader: true });
+      const notInMSsub = XLSX.utils.json_to_sheet(notInServingTimeSubservice, { skipHeader: true });
+      // Créer un classeur et ajouter la feuille de calcul
+      const appWb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(appWb, gWs, 'globals');
+      XLSX.utils.book_append_sheet(appWb, gTWs, 'globals times');
+      XLSX.utils.book_append_sheet(appWb, appWs, 'tickets');
+      XLSX.utils.book_append_sheet(appWb, servicesWs, 'services');
+      XLSX.utils.book_append_sheet(appWb, mTWs, 'Mean Waiting Time By Service');
+      XLSX.utils.book_append_sheet(appWb, mSWs, 'Mean Serving Time By Service');
+      XLSX.utils.book_append_sheet(appWb, inMWs, 'OIMWTBS');
+      XLSX.utils.book_append_sheet(appWb, notInMWs, 'NOIMWTBS');
+      XLSX.utils.book_append_sheet(appWb, inMSs, 'OIMSTBS');
+      XLSX.utils.book_append_sheet(appWb, notInMSs, 'NOIMSTBS');
+      XLSX.utils.book_append_sheet(appWb, subServicesWs, 'Point d\'appel');
+      XLSX.utils.book_append_sheet(appWb, mTWsub, 'Mean Waiting Time By Subservice');
+      XLSX.utils.book_append_sheet(appWb, mSWsub, 'Mean Serving Time By Subservice');
+      XLSX.utils.book_append_sheet(appWb, inMWSub, 'OIMWTBSub');
+      XLSX.utils.book_append_sheet(appWb, notInMWSub, 'NOIMWTBSub');
+      XLSX.utils.book_append_sheet(appWb, inMSsub, 'OIMSTBSub');
+      XLSX.utils.book_append_sheet(appWb, notInMSsub, 'NOIMSTBSub');
+
+      // Convertir le classeur en tableau d'octets
+      const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+      // Créer un Blob à partir des données du classeur
+      const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      const appData = new Blob([appBuffer], { type: fileType });
+
+      // Télécharger le fichier
+      FileSaver.saveAs(appData, 'rapport.xlsx');
+    }
+  }
+
+  const exportParticularDataToToExcel = async (name: string, title: string, header: any, list: any,) => {
+    if (filter == false) {
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    const data: any = [];
+    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
+    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
+    const meanTimeServiceTitle = { '': { v: title, s: titleStyle } };
+    const meanTimeServiceDescription = { '': { v: description, s: descriptionStyle } };
+    data.push(meanTimeServiceTitle, meanTimeServiceDescription);
+    const jump = { '': '' };
+    data.push(jump);
+    const serviceNames = header;
+
+    // En-tête des colonnes avec les noms des services
+    const headerRow: any = {};
+    serviceNames.forEach((name: string | number) => {
+      headerRow[name] = name;
+    });
+
+    data.push(headerRow);
+    const mTSData: any = {};
+    serviceNames.forEach((name: string | number) => {
+      const meanWaitingTime = list.find((item: { name: any; }) => item.name === name);
+      if (meanWaitingTime) {
+        mTSData[name] = meanWaitingTime.amount;
+      } else {
+        mTSData[name] = '00:00:00';
+      }
+    });
+
+    data.push(mTSData);
+    const mTWs = XLSX.utils.json_to_sheet(data, { skipHeader: true });
+    const appWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(appWb, mTWs, name);
+
+    // Convertir le classeur en tableau d'octets
+    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+    // Créer un Blob à partir des données du classeur
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const appData = new Blob([appBuffer], { type: fileType });
+
+    // Télécharger le fichier
+    FileSaver.saveAs(appData, `${name}.xlsx`);
+  }
+
+  const exportMeanTimeDataToToExcel = async (name: string, title: string, header: any, list: any,) => {
+    if (filter == false) {
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    const meanTimeService: any = [];
+    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
+    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
+    const meanTimeServiceTitle = { '': { v: title, s: titleStyle } };
+    const meanTimeServiceDescription = { '': { v: description, s: descriptionStyle } };
+    meanTimeService.push(meanTimeServiceTitle, meanTimeServiceDescription);
+    const jump = { '': '' };
+    meanTimeService.push(jump);
+    const serviceNames = header;
+
+    // En-tête des colonnes avec les noms des services
+    const headerRow: any = {};
+    serviceNames.forEach((name: string | number) => {
+      headerRow[name] = name;
+    });
+
+    meanTimeService.push(headerRow);
+    const mTSData: any = {};
+    serviceNames.forEach((name: string | number) => {
+      const meanWaitingTime = list.find((item: { name: any; }) => item.name === name);
+      if (meanWaitingTime) {
+        mTSData[name] = format(meanWaitingTime.amount * 60 * 1000, 'HH:mm:ss');
+      } else {
+        mTSData[name] = '00:00:00';
+      }
+    });
+
+    meanTimeService.push(mTSData);
+    const mTWs = XLSX.utils.json_to_sheet(meanTimeService, { skipHeader: true });
+    const appWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(appWb, mTWs, name);
+
+    // Convertir le classeur en tableau d'octets
+    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+    // Créer un Blob à partir des données du classeur
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const appData = new Blob([appBuffer], { type: fileType });
+
+    // Télécharger le fichier
+    FileSaver.saveAs(appData, `${name}.xlsx`);
+  }
+
+
+  const exportTicketsDataToExcel = async (name: string, title: string, list: any,) => {
+    if (filter == false) {
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
+    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
+    const serviceTitle = { '': { v: title, s: titleStyle } };
+    const serviceDescription = { '': { v: description, s: descriptionStyle } };
+    const subServices: any = [];
+    subServices.push(serviceTitle, serviceDescription);
+
+    for (let index = 0; index < list.appointmentsByService.length; index++) {
+      const element = list.appointmentsByService[index];
+      const serviceTitle = { '': { v: element.name, s: titleStyle } };
+      subServices.push(serviceTitle);
+      const newL = { '': '\n' };
+      subServices.push(newL);
+      const headers2 = {
+        'Reçu': 'Reçu',
+        'Traité': 'Traité',
+        'En attente': 'En attente'
+      };
+      subServices.push(headers2);
+      const data = {
+        'Reçu': element.amount ? element.amount : 0,
+        'Traité': list.serveAppointmentsByService[index]?.amount ? list.serveAppointmentsByService[index]?.amount : 0,
+        'En attente': list.waitingAppointmentsByService[index]?.amount ? list.waitingAppointmentsByService[index]?.amount : 0
+      };
+      subServices.push(data);
+    }
+
+    const mTWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
+    const appWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(appWb, mTWs, name);
+
+    // Convertir le classeur en tableau d'octets
+    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+    // Créer un Blob à partir des données du classeur
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const appData = new Blob([appBuffer], { type: fileType });
+
+    // Télécharger le fichier
+    FileSaver.saveAs(appData, `${name}.xlsx`);
+  }
+
+  const exportTicketsBySubServiceDataToExcel = async (name: string, title: string, list: any,) => {
+    if (filter == false) {
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
+    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
+    const serviceTitle = { '': { v: title, s: titleStyle } };
+    const serviceDescription = { '': { v: description, s: descriptionStyle } };
+    const subServices: any = [];
+    subServices.push(serviceTitle, serviceDescription);
+
+    for (let index = 0; index < list.appointmentsBySubService.length; index++) {
+      const element = list.appointmentsBySubService[index];
+      const serviceTitle = { '': { v: element.name, s: titleStyle } };
+      subServices.push(serviceTitle);
+      const newL = { '': '\n' };
+      subServices.push(newL);
+      const headers2 = {
+        'Reçu': 'Reçu',
+        'Traité': 'Traité',
+        'En attente': 'En attente'
+      };
+      subServices.push(headers2);
+      const data = {
+        'Reçu': element.amount ? element.amount : 0,
+        'Traité': list.serveAppointmentsBySubService[index]?.amount ? list.serveAppointmentsBySubService[index]?.amount : 0,
+        'En attente': list.waitingAppointmentsBySubService[index]?.amount ? list.waitingAppointmentsBySubService[index]?.amount : 0
+      };
+      subServices.push(data);
+    }
+
+
+    const mTWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
+    const appWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(appWb, mTWs, name);
+
+    // Convertir le classeur en tableau d'octets
+    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+    // Créer un Blob à partir des données du classeur
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const appData = new Blob([appBuffer], { type: fileType });
+
+    // Télécharger le fichier
+    FileSaver.saveAs(appData, `${name}.xlsx`);
+  }
+
+  const exportTableDataToExcel = async (name: string, title: string, list: any,) => {
+    if (filter == false) {
+      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
+    }
+    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
+    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
+    const tableTitle = { '': { v: title, s: titleStyle } };
+    const tableDescription = { '': { v: description, s: descriptionStyle } };
+
+    const appointments: any = [];
+    appointments.push(tableTitle, tableDescription);
+
+    // Ajouter un saut de ligne avant les en-têtes
+    const jump1 = { '': '' };
+    appointments.push(jump1);
+
+    // Ajouter les en-têtes des colonnes
+
+    const headers = {
+      'Heure d\'arrivée': 'Heure d\'arrivée',
+      'No d\'arrivée': 'No d\'arrivée',
+      'No de ticket': 'No de ticket',
+      'Service': 'Service',
+      "Point d'appel": "Point d'appel",
+      "Heure d'appel": "Heure d'appel",
+      "Temps d'attente": "Temps d'attente",
+      'Temps de traitement': "Temps de traitement",
+      "Ticket transféré": "Ticket transféré",
+      "Ticket sauté": "Ticket sauté"
+    };
+    appointments.push(headers);
+    // Ajouter les données
+    for (let index = 0; index < list.appointmentList.length; index++) {
+      const element = list.appointmentList[index];
+      const data = {
+        'Heure d\'arrivée': element.time,
+        'No d\'arrivée': element.id,
+        'No de ticket': element.num,
+        'Service': element.Service ? element.Service.name : '',
+        "Point d'appel": element.Subservice ? element.Subservice.name : '',
+        'Heure d\'appel': element.callTime,
+        'Temps d\'attente': format(element.waitingTime * 60 * 1000, 'HH:mm:ss'),
+        'Temps de traitement': format(element.processingTime * 60 * 1000, 'HH:mm:ss'),
+        "Ticket transféré": element.transfered ? "Oui" : "Non",
+        "Ticket sauté": element.missing ? "Oui" : "Non"
+      };
+      appointments.push(data);
+    }
+
+    const mTWs = XLSX.utils.json_to_sheet(appointments, { skipHeader: true });
+    const appWb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(appWb, mTWs, name);
+
+    // Convertir le classeur en tableau d'octets
+    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+    // Créer un Blob à partir des données du classeur
+    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    const appData = new Blob([appBuffer], { type: fileType });
+
+    // Télécharger le fichier
+    FileSaver.saveAs(appData, `${name}.xlsx`);
+  }
+
+  if (isLoading || loading || !result) {
+    return <Loader />
+  }
+
+  return (
+    <div className=' bg-gray-200 h-fit  w-full rounded-t-xl p-4'>
+      <div className=" w-full flex items-center justify-between">
+        <div className="flex gap-3 items-center">
+          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par semaine</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorWeekElFilter}
+            keepMounted
+            open={openWeekMenuFilter}
+            onClose={handleCloseWeekMenuFilter}
+            className=' rounded-xl'
+          >
+
+            <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
+            <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
+          </Menu>
+          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par mois</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorMonthElFilter}
+            keepMounted
+            open={openMonthMenuFilter}
+            onClose={handleCloseMonthMenuFilter}
+            className=' rounded-xl'
+          >
+            {
+              result?.months?.map((month) => (
+                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+              ))
+            }
+          </Menu>
+          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par année</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorYearElFilter}
+            keepMounted
+            open={openYearMenuFilter}
+            onClose={handleCloseYearMenuFilter}
+            className=' rounded-xl'
+          >
+            {
+              result?.years?.map((year) => (
+                <MenuItem key={year} onClick={() => handleFilter(year.toString())} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{year}</MenuItem>
+              ))
+            }
+          </Menu>
+          <div className=" h-8 w-8 rounded-md bg-white flex flex-col items-center justify-center cursor-pointer" onClick={() => setFilter(false)}>
+            <IoReload />
+          </div>
+
+        </div>
+
+        <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+      </div>
+      <h3 className=" font-bold mt-2">Globale</h3>
+      <div className=" flex justify-center mt-12">
+        <div className=" w-4 bg-black">
+        </div>
+        <div className="flex bg-white rounded-sm justify-between items-center ">
+          <div className="flex w-48 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
+            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
+              <FaClipboardList className=" text-blue" />
+            </div>
+            <div>
+              <h2 className=" text-sm font-bold">
+                {filter === false ? result?.services : filterStats.services}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Services
+              </p>
+            </div>
+          </div>
+          <div className="flex w-48 h-20 p-4 items-center justify-center gap-4 border-r-[1px] ">
+            <div className=" w-12 h-12 bg-blue bg-opacity-20 rounded-full flex justify-center items-center">
+              <IoTabletLandscape className=" text-blue" />
+            </div>
+            <div>
+              <h2 className=" text-sm font-bold">
+                {filter === false ? result?.subServices : filterStats.subServices}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Points d&rsquo;appels
+              </p>
+            </div>
+          </div>
+          <div className="flex w-52 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
+            <div className=" w-12 h-12 bg-green bg-opacity-20 rounded-full flex justify-center items-center">
+              <IoCheckmarkDoneCircleSharp className=" text-green" />
+            </div>
+            <div>
+              <h2 className=" text-sm font-bold">
+                {filter === false ? result?.receives : filterStats.receives}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Tickets traités
+              </p>
+            </div>
+          </div>
+          <div className="flex w-52 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
+            <div className=" w-12 h-12 bg-green bg-opacity-20 rounded-full flex justify-center items-center">
+              <RiLoader2Fill className=" text-green" />
+            </div>
+            <div>
+              <h2 className=" text-sm font-bold">
+                {filter === false ? result?.waitings : filterStats.waitings}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Tickets en attente
+              </p>
+            </div>
+          </div>
+          <div className="flex w-60 h-20 p-4 items-center justify-center gap-4">
+            <div className=" w-12 h-12 bg-red bg-opacity-10 rounded-full flex justify-center items-center">
+              <BsStickyFill className=" text-red" />
+            </div>
+            <div>
+              <h2 className=" text-sm font-bold">
+                {filter === false ? result?.appointments : filterStats.appointments}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Total tickets
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className=" flex justify-center my-8 items-center">
+        <MdTimer size={50} />
+        <div className="flex bg-white rounded-sm justify-between items-center ">
+          <div className="flex w-52 h-20 py-4 items-center justify-center gap-2 border-r-[1px]">
+            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
+              <MdOutlineTimelapse className=" text-blue" />
+            </div>
+            <div>
+              <h2 className=" text-md font-bold">
+                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Temps moyen d&rsquo;attente
+              </p>
+            </div>
+          </div>
+          <div className="flex w-58 h-20 py-4 px-2 items-center justify-center gap-2 border-r-[1px]">
+            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
+              <MdOutlineTimelapse className=" text-blue" />
+            </div>
+            <div>
+              <h2 className=" text-md font-bold">
+                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+              </h2>
+              <p className=" text-xs opacity-60">
+                Temps moyen de traitement
+              </p>
+            </div>
+          </div>
+          <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
+            <div>
+              <p className=" text-xs opacity-60 text-center pb-1">
+                Temps optimal d&rsquo;attente
+              </p>
+              <div className=" flex justify-between px-2">
+                <div className=" text-center">
+                  <p className=" text-xs opacity-60">
+                    Ticket
+                  </p>
+                  <h2 className=" text-sm font-bold text-green-500">
+                    {filter === false ? result?.totalInWaiting : filterStats.totalInWaiting}
+                  </h2>
+                  <p className=" text-xs opacity-60">
+                    Oui
+                  </p>
+                </div>
+                <div className="border-r-[1px]"></div>
+                <div className=" text-center">
+                  <p className=" text-xs opacity-60">
+                    Ticket
+                  </p>
+                  <h2 className=" text-sm font-bold text-red-500">
+                    {filter === false ? result?.totalNotInWaiting : filterStats.totalNotInWaiting}
+                  </h2>
+                  <p className=" text-xs opacity-60">
+                    Non
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
+            <div>
+              <p className=" text-xs opacity-60 text-center pb-1">
+                Temps optimal de traitement
+              </p>
+              <div className=" flex justify-between px-2">
+                <div className=" text-center">
+                  <p className=" text-xs opacity-60">
+                    Ticket
+                  </p>
+                  <h2 className=" text-sm font-bold text-green-500">
+                    {filter === false ? result?.totatlInServing : filterStats.totatlInServing}
+                  </h2>
+                  <p className=" text-xs opacity-60">
+                    Oui
+                  </p>
+                </div>
+                <div className="border-r-[1px]"></div>
+                <div className=" text-center">
+                  <p className=" text-xs opacity-60">
+                    Ticket
+                  </p>
+                  <h2 className=" text-sm font-bold text-red-500">
+                    {filter === false ? result?.totatlNotInServing : filterStats.totatlNotInServing}
+                  </h2>
+                  <p className=" text-xs opacity-60">
+                    Non
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className=" w-4 bg-black h-20">
+        </div>
+      </div>
+      <h3 className=" font-bold mb-4">Services</h3>
+      <div className=" flex justify-center gap-12 mb-7">
+        <div className=" w-96 bg-white rounded pb-1">
+          <button onClick={() => exportMeanTimeDataToToExcel('waitingTimeByService', 'Temps moyen d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeByService : result.meanWaitingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <MdTimer size={30} className=" mx-auto" />
+          <hr className=" w-8 mx-auto my-3" />
+          <p className=" text-center">Temps moyen d&rsquo;attente</p>
+          <div className="flex gap-4 justify-center my-2">
+            {
+              filter === false ?
+                result?.meanWaitingTimeByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                )) :
+                filterStats?.meanWaitingTimeByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+        <div className=" w-96 bg-white rounded pb-1">
+          <button onClick={() => exportMeanTimeDataToToExcel("meanServingTime", '', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeByService : result.meanServingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <MdTimer size={30} className=" mx-auto" />
+          <hr className=" w-8 mx-auto my-3" />
+          <p className=" text-center">Temps moyen de traitement</p>
+          <div className="flex gap-4 justify-center my-2">
+            {
+              filter === false ?
+                result?.meanServingTimeByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+                :
+                filterStats?.meanServingTimeByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+      </div>
+      <div className=" mt-2 flex justify-center items-start gap-5">
+        <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
+          <button onClick={() => exportTicketsDataToExcel("allTicketsByService", "Nombre de tickets par Servic", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <h3 className=" text-center p-1">Nombre de tickets par Service</h3>
+          <Bar
+            data={{
+              labels: filter === false ? result?.appointmentsByService.map(record => record.name) : filterStats?.appointmentsByService.map(record => record.name), // Les noms de vos services
+              datasets: [
+                {
+                  label: 'Reçu',
+                  backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
+                  borderColor: 'rgba(0, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 0, 0, 1)',
+                  data: filter === false ? result?.appointmentsByService.map(record => record.amount) : filterStats?.appointmentsByService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
+                },
+                {
+                  label: 'Traité',
+                  backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
+                  borderColor: 'rgba(0, 128, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 128, 0, 1)',
+                  data: filter === false ? result?.serveAppointmentsByService.map(record => record.amount) : filterStats?.serveAppointmentsByService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                },
+                {
+                  label: 'En attente',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filter === false ? result?.waitingAppointmentsByService.map(record => record.amount) : filterStats?.waitingAppointmentsByService.map(record => record.amount), // Les données pour "En attente" pour chaque service
+                },
+              ],
+            }}
+            width={100}
+            height={50}
+            options={{
+              maintainAspectRatio: false,
+            }} // Utilisation des options typées
+          />
+        </div>
+        <div className=" w-96">
+          <div className=" bg-white rounded pb-1">
+            <button onClick={() => exportParticularDataToToExcel("inOptimalWaitingTimeByService", 'Le nombre de ticket dans le temps optimal d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingByService : result.totatlInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <MdTimer size={30} className=" mx-auto" />
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket dans le temps optimal d&lsquo;attente</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlInWaitingByService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+                  :
+                  filterStats?.totatlInWaitingByService.map(record => (
+                    <div key={record.name}  className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1 my-7">
+            <button onClick={() => exportParticularDataToToExcel("notInOptimalWaitingTimeByService", "Le nombre de ticket en dehors du temps optimal d'attente par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingByService : result.totatlNotInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket en dehors du temps optimal d&lsquo;attente</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlNotInWaitingByService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  )) :
+                  filterStats?.totatlNotInWaitingByService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1">
+            <button onClick={() => exportParticularDataToToExcel("inOptimalServingTimeByService", "Le nombre de ticket dans le temps optimal de traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingByService : result.totatlInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket dans le temps optimal de traitement</p>
+            <div className="flex gap-4 justify-center my-2">
+              {filter === false ?
+                result?.totatlInServingByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+                :
+                filterStats?.totatlInServingByService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1 my-7">
+            <button onClick={() => exportParticularDataToToExcel("notInOptimalServingTimeByService", "Le nombre de ticket en dehors du temps optimal traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingByService : result.totatlNotInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket en dehors du temps optimal traitement</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlNotInServingByService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+                  :
+                  filterStats?.totatlNotInServingByService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      <h3 className=" font-bold mb-4">Point d&apos;appel</h3>
+      <div className=" flex justify-center gap-12 mb-7">
+        <div className=" w-96 bg-white rounded pb-1">
+          <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <MdTimer size={30} className=" mx-auto" />
+          <hr className=" w-8 mx-auto my-3" />
+          <p className=" text-center">Temps moyen d&apos;attente</p>
+          <div className="flex gap-4 justify-center my-2">
+            {
+              filter === false ?
+                result?.meanWaitingTimeBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+                :
+                filterStats?.meanWaitingTimeBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+        <div className=" w-96 bg-white rounded pb-1">
+          <button onClick={() => exportMeanTimeDataToToExcel("meanPTimeByService", "Temps moyen de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeBySubService : result.meanServingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <MdTimer size={30} className=" mx-auto" />
+          <hr className=" w-8 mx-auto my-3" />
+          <p className=" text-center">Temps moyen de traitement</p>
+          <div className="flex gap-4 justify-center my-2">
+            {
+              filter === false ?
+                result?.meanServingTimeBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+                :
+                filterStats?.meanServingTimeBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{format(record.amount * 60 * 1000, 'HH:mm:ss')}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+      </div>
+      <div className=" mt-8 flex justify-center items-start gap-5">
+        <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
+          <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <h3 className=" text-center p-1">Nombre de tickets par Point d&apos;appel</h3>
+          <Bar
+            data={{
+              labels: filter === false ? result?.appointmentsBySubService.map(record => record.name) : filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
+              datasets: [
+                {
+                  label: 'Reçu',
+                  backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
+                  borderColor: 'rgba(0, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 0, 0, 1)',
+                  data: filter === false ? result?.appointmentsBySubService.map(record => record.amount) : filterStats?.appointmentsBySubService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
+                },
+                {
+                  label: 'Traité',
+                  backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
+                  borderColor: 'rgba(0, 128, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 128, 0, 1)',
+                  data: filter === false ? result?.serveAppointmentsBySubService.map(record => record.amount) : filterStats?.serveAppointmentsBySubService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                },
+                {
+                  label: 'En attente',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filter === false ? result?.waitingAppointmentsBySubService.map(record => record.amount) : filterStats?.waitingAppointmentsBySubService.map(record => record.amount), // Les données pour "En attente" pour chaque service
+                },
+              ],
+            }}
+            width={100}
+            height={50}
+            options={{
+              maintainAspectRatio: false,
+
+            }} // Utilisation des options typées
+          />
+        </div>
+        <div className=" w-96">
+          <div className=" bg-white rounded pb-1">
+            <button onClick={() => exportParticularDataToToExcel("inOptWTimeBySubService", "Le nombre de ticket dans le temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingBySubService : result.totatlInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <MdTimer size={30} className=" mx-auto" />
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket dans le temps optimal d&apos;attente</p>
+            <div className="flex gap-4 justify-center my-2">
+              {filter === false ?
+                result?.totatlInWaitingBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+                :
+                filterStats?.totatlInWaitingBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                    <p className=" text-xs">{record.name}</p>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1 my-7">
+            <button onClick={() => exportParticularDataToToExcel("notInOptWTimeBySubService", "Le nombre de ticket en dehors du temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingBySubService : result.totatlNotInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket en dehors du temps optimal d&apos;attente</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlNotInWaitingBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+                  :
+                  filterStats?.totatlNotInWaitingBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1">
+            <button onClick={() => exportParticularDataToToExcel("inOptSTimeBySubService", "Le nombre de ticket dans le temps optimal de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingBySubService : result.totatlInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket dans le temps optimal de traitement</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlInServingBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+                  :
+                  filterStats?.totatlInServingBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+
+          <div className=" bg-white rounded pb-1 my-7">
+            <button onClick={() => exportParticularDataToToExcel("notInOptSTimeBySubService", "Le nombre de ticket en dehors du temps optimal traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingBySubService : result.totatlNotInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            <hr className=" w-8 mx-auto my-3" />
+            <p className=" text-center">Le nombre de ticket en dehors du temps optimal traitement</p>
+            <div className="flex gap-4 justify-center my-2">
+              {
+                filter === false ?
+                  result?.totatlNotInServingBySubService.map((record: { amount: number; name: string }) => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+                  :
+                  filterStats?.totatlNotInServingBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs">{record.name}</p>
+                    </div>
+                  ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h3 className=" font-bold mt-2">Tickets traités</h3>
+     { filter == false && <div className=" w-full bg-white rounded-md p-4 my-4">
+        <Line data={{
+          labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
+          datasets: [
+            {
+              label: 'Nombre de ticket prise',
+              data: result.appointmentsByHourSlot.map(record => record.amount ), // Exemple de données pour le nombre total de rendez-vous
+              borderColor: 'rgba(0, 0, 0, 1)',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            },
+            {
+              label: 'Nombre de ticket traité',
+              data: result.serveAppointmentsByHourSlot.map(record =>  record.amount ), // Exemple de données pour le nombre traité
+              borderColor: 'rgba(0, 255, 200, 1)',
+              backgroundColor: 'rgba(0, 255, 200, 0.5)',
+            },
+            {
+              label: 'Nombre de ticket en attente',
+              data: result.serveAppointmentsByHourSlot.map(record => result.appointments -  record.amount ), // Exemple de données pour le nombre en attente
+              borderColor: 'rgba(255, 0, 0, 1)',
+              backgroundColor: 'rgba(255, 0, 0, 0.5)',
+            },
+          ],
+        }} />
+
+      </div>}
+      <div className=" mt-10">
+        <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+        <table className="w-full table-fixed">
+          <thead>
+            <tr className=" bg-black">
+              <th className="w-1/3 px-3 py-4 text-left text-white text-xs font-semibold">Heure d&apos;arrivée</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">No d&apos;arrivée</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">No de ticket</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Service</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Point d&apos;appel</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Heure d&apos;appel</th>
+              <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Temps d&apos;attente</th>
+              <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Temps de traitement</th>
+              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Ticket transféré</th>
+              <th className="w-1/5 py-4 text-left text-white text-xs font-semibold">Ticket sauté</th>
+            </tr>
+          </thead>
+          {
+            seeAll ? filter === false ? result.appointmentList?.map((appointment) => (
+              <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td className='text-xs py-2 px-3 font-semibold'>
+                  {appointment.time}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.id}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.num}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.Service.name}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.Subservice.name}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.callTime}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                </td>
+
+              </tr>
+            )) :
+              <>
+                {filterStats.appointmentList?.map((appointment) => (
+                  <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                      {appointment.time}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.id}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.num}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.Service.name}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.Subservice.name}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.callTime}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                    </td>
+
+                  </tr>
+                ))}
+                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <td className='text-xs py-2 px-3 font-semibold'>
+                    Total
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.appointments}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.appointments}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.services}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.subServices}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.appointmentList[filterStats.appointmentList.length - 1].callTime}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.appointmentList.filter(element => element.transfered).length}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {filterStats.appointmentList.filter(element => element.missing).length}
+                  </td>
+                </tr>
+              </> :
+              filter === false ?
+                <>
+                  {result.appointmentList?.map((appointment, index) => {
+                    if (index < 14) {
+                      return (
+                        <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.time}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.id}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.num}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Service.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Subservice.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.callTime}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                        </tr>
+                      );
+                    }
+                  })
+                  }
+                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                      Total
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.appointments}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.appointments}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.services}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.subServices}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.appointmentList[result.appointmentList.length - 1]?.callTime}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(result.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(result.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.appointmentList.filter(element => element.transfered).length}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {result.appointmentList.filter(element => element.missing).length}
+                    </td>
+                  </tr>
+                </> :
+                <>
+                  {filterStats.appointmentList?.map((appointment, index) => {
+                    if (index < 14) {
+                      return (
+                        <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.time}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.id}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.num}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Service.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Subservice.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.callTime}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                        </tr>
+                      );
+                    }
+                  })}
+                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                      Total
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointments}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointments}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.services}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.subServices}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointmentList[filterStats.appointmentList.length - 1]?.callTime}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointmentList.filter(element => element.transfered).length}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointmentList.filter(element => element.missing).length}
+                    </td>
+                  </tr>
+                </>
+          }
+        </table>
+        {result.appointmentList.length > 15 || filterStats.appointmentList.length > 15 ? <button onClick={() => setSeeAll(!seeAll)} className=" mt-2 bg-black rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2">
+          {!seeAll ? <p>Voir plus</p> : <p>Voir moins</p>}
+        </button>
+          : null
+        }
+      </div>
+    </div>
+  )
+}
+
+export default Home;
