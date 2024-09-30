@@ -6,8 +6,8 @@ import * as zod from "zod";
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from "react";
 import { toast } from 'react-hot-toast';
-import { MdOutlineAlternateEmail} from 'react-icons/md';
-import {BsKey} from "react-icons/bs";
+import { MdOutlineAlternateEmail } from 'react-icons/md';
+import { BsKey } from "react-icons/bs";
 import logo from "@/assets/applogo.png";
 import Image from 'next/image';
 import { signIn, signOut, useSession } from "next-auth/react";
@@ -21,7 +21,7 @@ const schema = zod.object({
       required_error: "le nom d'utilisateur est obligatoire",
       invalid_type_error: "entrez un nom d'utilisateur valide"
     }
-  ).min(6, { message: "Le nom d'utilisateur doit comporter au moins 2 caractères" }),
+  ).min(2, { message: "Le nom d'utilisateur doit comporter au moins 2 caractères" }),
   password: zod.string({
     required_error: "le mot de passe est obligatoire"
   }).min(6, { message: "Le mot de passe doit comporter au moins 6 caractères" }),
@@ -41,56 +41,51 @@ export default function Home() {
     try {
       setLodading(true);
 
-     const response = await signIn('credentials', {
+      const response = await signIn('credentials', {
         username: data.email,
         password: data.password,
         redirect: false
       });
 
-      if(response?.error){
+      if (response?.error) {
         setLodading(false);
-        toast.error("Le compte est désactivé ou les informations d'identification sont incorrectes",{duration:3000, className:" text-xs text-center"});
+        toast.error("Le compte est désactivé ou les informations d'identification sont incorrectes", { duration: 3000, className: " text-xs text-center" });
       }
     }
     catch (error) {
       setLodading(false);
-      toast.error("Le compte est désactivé ou les informations d'identification sont incorrectes",{duration:3000, className:" text-xs text-center"});
+      toast.error("Le compte est désactivé ou les informations d'identification sont incorrectes", { duration: 3000, className: " text-xs text-center" });
     }
     finally {
-     
+
     }
-  }, [ setLodading]);
+  }, [setLodading]);
 
   const { data: session, status } = useSession();
 
   useEffect(() => {
     if (status === "authenticated") {
-       console.log(session.tokens.accessToken);
-       
-      if (session.user.role.name.toLowerCase() === "root") {
-        router.push('/home')
-      }
-      else if (session.user.role.name.toLowerCase() === "admin") {
-        router.push('/home')
-      }
+      if (session.user.officeId && session.user.officeId !== 0 && session.user.role.name === "root") {
+        router.push('/office')
+      } 
       else {
-        router.push('/home/services')
+        router.push('/home')
       }
     }
 
   }, [session, status, router])
-  
+
   return (
     <div className=' overflow-hidden h-screen bg-white lg:bg-gray-100 lg:py-32'>
 
       <div className="lg:w-2/3 mx-auto pb-32 lg:pb-0">
         {loading && <Box sx={{ width: '100%', margin: 'auto' }}>
-          <LinearProgress color="success"/>
+          <LinearProgress color="success" />
         </Box>}
       </div>
       <div className=" lg:h-96 lg:w-2/3 bg-white lg:mx-auto lg:flex lg:content-between">
 
-        <div className=" mx-auto my-12 lg:my-0 lg:flex lg:h-96 w-1/2 bg-black lg:border-r border-gray">
+        <div className=" mx-auto my-12 lg:my-0 lg:flex lg:h-96 w-1/2 bg-white lg:border-r border-gray">
           <Image className=" mx-auto my-auto" src={logo} alt={"logo"} width={100} />
         </div>
 

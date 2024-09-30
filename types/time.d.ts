@@ -1,8 +1,7 @@
-interface Color {
+interface Time {
     id: number;
-    color: string;
+    time: number;
     type: string;
-    isimage: boolean;
     createdAt: Date;
     updatedAt: Date;
 }

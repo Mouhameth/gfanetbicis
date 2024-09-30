@@ -7,8 +7,11 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "qmapbackoffice",
+  title: "GPass",
   description: "Qmapbackoffice app",
+  icons: {
+    icon: '/favicon.ico'
+  },
 };
 
 export default function RootLayout({

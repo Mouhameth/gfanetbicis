@@ -3,5 +3,6 @@ interface Media {
     url: string;
     type: string;
     selected: boolean;
+    playTime: number;
     createdAt: Date;
 }

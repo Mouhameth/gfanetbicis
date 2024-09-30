@@ -1,5 +1,4 @@
 "use client";
-import { BiSolidGroup } from "react-icons/bi";
 import { RiFileExcel2Fill, RiLoader2Fill } from "react-icons/ri";
 import {
   Chart as ChartJS,
@@ -9,8 +8,7 @@ import {
   Title,
   Tooltip,
   ArcElement,
-  Legend,
-  Point
+  Legend
 } from 'chart.js';
 import { Bar, Line } from 'react-chartjs-2';
 import Loader from "@/components/common/Loader";
@@ -21,7 +19,7 @@ import XLSX from 'sheetjs-style';
 import { AwaitedReactNode, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, useEffect, useState } from "react";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
 import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
-import { FaClipboardList } from "react-icons/fa";
+import { FaClipboardList, FaRegCalendar } from "react-icons/fa";
 import { BsStickyFill } from "react-icons/bs";
 import { CiFilter } from "react-icons/ci";
 import { Menu, MenuItem } from "@mui/material";
@@ -30,6 +28,9 @@ import { fr } from "date-fns/locale/fr";
 import toast from "react-hot-toast";
 import { MdOutlineTimelapse, MdTimer } from "react-icons/md";
 import 'chart.js/auto';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import { HiOutlineBuildingOffice } from "react-icons/hi2";
 
 ChartJS.register(
   CategoryScale,
@@ -46,13 +47,26 @@ const Home = () => {
   const axiosAuth = useAxiosAuth();
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR') })).then((res) => res.data));
-  const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
-  const fileExtension = '.xlsx';
+  const officeUrl = `/office`;
+  const [startDate, setStartDate] = useState(new Date());
+  const [endDate, setEndDate] = useState(null);
+  const [officeId, setOfficeId] = useState(1)
+  const [formattedStartDate, setFormattedStartDate] = useState('');
+  const [formattedEndDate, setFormattedEndDate] = useState('');
+  const { data: fetchedOffices, isLoading: officeLoading, error: officeError } = useSWR(officeUrl, () => axiosAuth.get<Office[]>(officeUrl).then((res) => res.data));
+  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), id: officeId })).then((res) => res.data));
   const useChangeTitle = useChangeHeaderTitle();
+  const [currentDate, setCurrentDate] = useState('');
+  const [officeName, setOfficeName] = useState('');
   useEffect(() => {
-    useChangeTitle.onChanged("Tableau de bord");
-  }, [result]);
+    useChangeTitle.onChanged("Rapport global");
+    setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+    setFormattedStartDate(format(startDate, 'dd/MM/yyyy'));
+    if (fetchedOffices && fetchedOffices.length > 0) {
+      setOfficeName(fetchedOffices![0].name)
+    }
+    setDescription(`Ceci represente l'ensemble des données pour l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+  }, [result, fetchedOffices]);
   const emptyStats: Stats = {
     subServices: 0,
     services: 0,
@@ -97,6 +111,8 @@ const Home = () => {
   const [loading, setLoading] = useState(false);
   const [seeAll, setSeeAll] = useState(false);
   const [description, setDescription] = useState('');
+  const [anchorOfficeElFilter, setAnchorOfficeElFilter] = useState(null);
+  const openOfficeMenuFilter = Boolean(anchorOfficeElFilter);
   const [anchorWeekElFilter, setAnchorWeekElFilter] = useState(null);
   const openWeekMenuFilter = Boolean(anchorWeekElFilter);
 
@@ -105,6 +121,9 @@ const Home = () => {
 
   const [anchorYearElFilter, setAnchorYearElFilter] = useState(null);
   const openYearMenuFilter = Boolean(anchorYearElFilter);
+
+  const [anchorRangeElFilter, setAnchorRangeElFilter] = useState(null);
+  const openRangeMenuFilter = Boolean(anchorRangeElFilter);
 
   const handleWeekClickFilter = (event: any) => {
     setAnchorWeekElFilter(event.currentTarget);
@@ -118,18 +137,30 @@ const Home = () => {
     setAnchorYearElFilter(event.currentTarget);
   };
 
+  const handleOfficeClickFilter = (event: any) => {
+    setAnchorOfficeElFilter(event.currentTarget);
+  };
 
+  const handleRangeClickFilter = (event: any) => {
+    setAnchorRangeElFilter(event.currentTarget);
+  };
 
   const handleFilter = async (date: string) => {
-    setDescription(`Ceci represente l'ensemble des données à la date du ${date}`)
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} à la date du ${date}`)
 
     try {
       setFilter(true);
       setLoading(true);
-      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date }));
-      if (res.status == 200) {
-        console.log(res);
+      setCurrentDate(`L'année ${date}`);
+      if (date.split('/').length === 2) {
+        setCurrentDate(`Le mois de ${format(`${date.split('/')[0]}/01/${date.split('/')[1]}`, 'MMMM yyyy', { locale: fr })}`);
+      }
+      if (date.split('/').length === 3) {
+        setCurrentDate(`La journée du ${format(`${date.split('/')[1]}/${date.split('/')[0]}/${date.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+      }
 
+      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date, id: officeId }));
+      if (res.status == 200) {
         setFilterStats(res.data);
       }
     } catch (error) {
@@ -142,13 +173,49 @@ const Home = () => {
     }
   };
 
+  const handleFilterOffice = async (office: Office) => {
+
+    setOfficeId(office.id);
+    setOfficeName(office.name);
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${office.name} à la date du ${now.toLocaleDateString('fr-FR')}`)
+    setCurrentDate("Aujourd'hui");
+    try {
+      setFilter(true);
+      setLoading(true);
+      setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+
+      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), id: office.id }));
+      if (res.status == 200) {
+        console.log(res.data);
+
+        setFilterStats(res.data);
+      }
+    } catch (error) {
+      setFilter(false);
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+    } finally {
+      setLoading(false);
+      setAnchorMonthElFilter(null);
+      setAnchorYearElFilter(null);
+      handleCloseOfficeMenuFilter();
+    }
+  };
+
   const handleWeekFilter = async (start: string, end: string) => {
-    setDescription(`Ceci represente l'ensemble des données de ${start} à ${end}`)
+    const date1 = new Date(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`);
+    const date2 = new Date();
+    // Calculer la différence en temps (en millisecondes)
+    const differenceInTime = date2.getTime() - date1.getTime();
+
+    // Convertir la différence de temps en jours
+    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours: ${differenceInDays < 7 ? differenceInDays : 7}`)
 
     try {
       setFilter(true);
       setLoading(true);
-      const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end }));
+      setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours: ${differenceInDays < 7 ? differenceInDays : 7}`);
+      const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, id: officeId }));
       if (res.status == 200) {
         setFilterStats(res.data);
       }
@@ -170,6 +237,25 @@ const Home = () => {
   const handleCloseYearMenuFilter = () => {
     setAnchorYearElFilter(null);
   };
+  const handleCloseOfficeMenuFilter = () => {
+    setAnchorOfficeElFilter(null);
+  };
+
+  const handleCloseRangeMenuFilter = () => {
+    setAnchorRangeElFilter(null);
+  };
+
+  const onChange = (dates: any) => {
+
+    const [start, end] = dates;
+    setStartDate(start);
+    setEndDate(end);
+    setFormattedStartDate(format(start, 'dd/MM/yyyy'))
+    if (end !== null) {
+      setFormattedEndDate(format(end, 'dd/MM/yyyy'));
+    }
+
+  };
 
   const exportToExcel = async () => {
     const appointments: any = [];
@@ -178,12 +264,11 @@ const Home = () => {
       stats = filterStats;
     } else {
       stats = result;
-      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
     }
     if (stats) {
       // Ajouter le titre et la description sur des lignes distinctes
       const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } }; // Style personnalisé pour le titre
-      const title = { '': { v: 'Titre du fichier Excel', s: titleStyle } };
+      const title = { '': { v: 'Tickets', s: titleStyle } };
       const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } }; // Style personnalisé pour la description
       const descript = { '': { v: description, s: descriptionStyle } };
       appointments.push(title, descript);
@@ -195,6 +280,7 @@ const Home = () => {
       // Ajouter les en-têtes des colonnes
 
       const headers = {
+        'Date d\'arrivée': 'Date d\'arrivée',
         'Heure d\'arrivée': 'Heure d\'arrivée',
         'No d\'arrivée': 'No d\'arrivée',
         'No de ticket': 'No de ticket',
@@ -211,6 +297,7 @@ const Home = () => {
       for (let index = 0; index < stats.appointmentList.length; index++) {
         const element = stats.appointmentList[index];
         const data = {
+          'Date d\'arrivée': element.date,
           'Heure d\'arrivée': element.time,
           'No d\'arrivée': element.id,
           'No de ticket': element.num,
@@ -270,7 +357,7 @@ const Home = () => {
       });
 
       const globalTime: any = [];
-      const globalTimeTitle = { '': { v: 'Données globalTimes', s: titleStyle } };
+      const globalTimeTitle = { '': { v: 'Données des temps globaux', s: titleStyle } };
       globalTime.push(globalTimeTitle, descript);
       globalTime.push(jump1);
       const gTHeaders = {
@@ -283,8 +370,8 @@ const Home = () => {
       };
       globalTime.push(gTHeaders);
       globalTime.push({
-        'Temps moyen d\'attente': stats.meanWaitingTime,
-        'Temps moyen de traitement': stats.meanServingTime,
+        'Temps moyen d\'attente': format(stats.meanWaitingTime * 60 * 1000, 'HH:mm:ss'),
+        'Temps moyen de traitement': format(stats.meanServingTime * 60 * 1000, 'HH:mm:ss'),
         'Ticket dans le temps optimal d\'attente': stats.totalInWaiting,
         'Ticket en dehors du temps optimal d\'attente': stats.totalNotInWaiting,
         'Ticket dans le temps optimal de traitement': stats.totatlInServing,
@@ -560,36 +647,36 @@ const Home = () => {
       const servicesWs = XLSX.utils.json_to_sheet(services, { skipHeader: true });
       const mTWs = XLSX.utils.json_to_sheet(meanTimeService, { skipHeader: true });
       const mSWs = XLSX.utils.json_to_sheet(meanServingTimeService, { skipHeader: true });
-      const inMWs = XLSX.utils.json_to_sheet(inWaitingTimeService, { skipHeader: true });
-      const notInMWs = XLSX.utils.json_to_sheet(notInWaitingTimeService, { skipHeader: true });
-      const inMSs = XLSX.utils.json_to_sheet(inServingTimeService, { skipHeader: true });
-      const notInMSs = XLSX.utils.json_to_sheet(notInServingTimeService, { skipHeader: true });
-      const subServicesWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
-      const mTWsub = XLSX.utils.json_to_sheet(meanTimeSubService, { skipHeader: true });
-      const mSWsub = XLSX.utils.json_to_sheet(meanServingTimeSubService, { skipHeader: true });
-      const inMWSub = XLSX.utils.json_to_sheet(inWaitingTimeSubservice, { skipHeader: true });
-      const notInMWSub = XLSX.utils.json_to_sheet(notInWaitingTimeSubservice, { skipHeader: true });
-      const inMSsub = XLSX.utils.json_to_sheet(inServingTimeSubservice, { skipHeader: true });
-      const notInMSsub = XLSX.utils.json_to_sheet(notInServingTimeSubservice, { skipHeader: true });
+      // const inMWs = XLSX.utils.json_to_sheet(inWaitingTimeService, { skipHeader: true });
+      // const notInMWs = XLSX.utils.json_to_sheet(notInWaitingTimeService, { skipHeader: true });
+      // const inMSs = XLSX.utils.json_to_sheet(inServingTimeService, { skipHeader: true });
+      // const notInMSs = XLSX.utils.json_to_sheet(notInServingTimeService, { skipHeader: true });
+      // const subServicesWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
+      // const mTWsub = XLSX.utils.json_to_sheet(meanTimeSubService, { skipHeader: true });
+      // const mSWsub = XLSX.utils.json_to_sheet(meanServingTimeSubService, { skipHeader: true });
+      // const inMWSub = XLSX.utils.json_to_sheet(inWaitingTimeSubservice, { skipHeader: true });
+      // const notInMWSub = XLSX.utils.json_to_sheet(notInWaitingTimeSubservice, { skipHeader: true });
+      // const inMSsub = XLSX.utils.json_to_sheet(inServingTimeSubservice, { skipHeader: true });
+      // const notInMSsub = XLSX.utils.json_to_sheet(notInServingTimeSubservice, { skipHeader: true });
       // Créer un classeur et ajouter la feuille de calcul
       const appWb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(appWb, gWs, 'globals');
-      XLSX.utils.book_append_sheet(appWb, gTWs, 'globals times');
-      XLSX.utils.book_append_sheet(appWb, appWs, 'tickets');
-      XLSX.utils.book_append_sheet(appWb, servicesWs, 'services');
-      XLSX.utils.book_append_sheet(appWb, mTWs, 'Mean Waiting Time By Service');
-      XLSX.utils.book_append_sheet(appWb, mSWs, 'Mean Serving Time By Service');
-      XLSX.utils.book_append_sheet(appWb, inMWs, 'OIMWTBS');
-      XLSX.utils.book_append_sheet(appWb, notInMWs, 'NOIMWTBS');
-      XLSX.utils.book_append_sheet(appWb, inMSs, 'OIMSTBS');
-      XLSX.utils.book_append_sheet(appWb, notInMSs, 'NOIMSTBS');
-      XLSX.utils.book_append_sheet(appWb, subServicesWs, 'Point d\'appel');
-      XLSX.utils.book_append_sheet(appWb, mTWsub, 'Mean Waiting Time By Subservice');
-      XLSX.utils.book_append_sheet(appWb, mSWsub, 'Mean Serving Time By Subservice');
-      XLSX.utils.book_append_sheet(appWb, inMWSub, 'OIMWTBSub');
-      XLSX.utils.book_append_sheet(appWb, notInMWSub, 'NOIMWTBSub');
-      XLSX.utils.book_append_sheet(appWb, inMSsub, 'OIMSTBSub');
-      XLSX.utils.book_append_sheet(appWb, notInMSsub, 'NOIMSTBSub');
+      XLSX.utils.book_append_sheet(appWb, gWs, 'Globals');
+      XLSX.utils.book_append_sheet(appWb, gTWs, 'Temps globaux');
+      XLSX.utils.book_append_sheet(appWb, appWs, 'Rapport détaillé');
+      XLSX.utils.book_append_sheet(appWb, servicesWs, 'Services');
+      XLSX.utils.book_append_sheet(appWb, mTWs, 'TEM par Service');
+      XLSX.utils.book_append_sheet(appWb, mSWs, 'TTM par Service');
+      // XLSX.utils.book_append_sheet(appWb, inMWs, 'Feuille 7');
+      // XLSX.utils.book_append_sheet(appWb, notInMWs, 'Feuille 18');
+      // XLSX.utils.book_append_sheet(appWb, inMSs, 'Feuille 9');
+      // XLSX.utils.book_append_sheet(appWb, notInMSs, 'Feuille 10');
+      // XLSX.utils.book_append_sheet(appWb, subServicesWs, 'Point d\'appel');
+      // XLSX.utils.book_append_sheet(appWb, mTWsub, 'Mean Waiting Time By Subservice');
+      // XLSX.utils.book_append_sheet(appWb, mSWsub, 'Mean Serving Time By Subservice');
+      // XLSX.utils.book_append_sheet(appWb, inMWSub, 'Feuille 14');
+      // XLSX.utils.book_append_sheet(appWb, notInMWSub, 'Feuille 15');
+      // XLSX.utils.book_append_sheet(appWb, inMSsub, 'Feuille 16');
+      // XLSX.utils.book_append_sheet(appWb, notInMSsub, 'Feuille 17');
 
       // Convertir le classeur en tableau d'octets
       const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
@@ -599,7 +686,7 @@ const Home = () => {
       const appData = new Blob([appBuffer], { type: fileType });
 
       // Télécharger le fichier
-      FileSaver.saveAs(appData, 'rapport.xlsx');
+      FileSaver.saveAs(appData, `rapport_global_${officeName}.xlsx`);
     }
   }
 
@@ -855,49 +942,53 @@ const Home = () => {
     FileSaver.saveAs(appData, `${name}.xlsx`);
   }
 
-  if (isLoading || loading || !result) {
+  const calculateWaitingAppointments = (appointmentsByHourSlot: any, serveAppointmentsByHourSlot: any): number[] => {
+    let pendingTickets = 0; // Initialisation du compteur des tickets en attente
+    const pendingTicketsByHourSlot = []; // Tableau pour stocker les résultats
+
+    // Calcul du nombre de tickets en attente pour chaque période
+    for (let i = 0; i < appointmentsByHourSlot.length; i++) {
+      console.log(serveAppointmentsByHourSlot[i]);
+      
+      pendingTickets += appointmentsByHourSlot[i].amount - serveAppointmentsByHourSlot[i].amount; // Ajout du résultat de la soustraction à l'accumulateur
+      pendingTicketsByHourSlot.push(pendingTickets); // Stockage du résultat dans le tableau
+    }
+    console.log(pendingTicketsByHourSlot);
+    
+    return pendingTicketsByHourSlot;
+  }
+
+  if (isLoading || loading || !result || officeLoading) {
     return <Loader />
   }
 
+  if (error || officeError) {
+    return <p className=" text-center text-xs text-red-500">Vérifie votre connexion</p>
+  }
+
   return (
-    <div className=' bg-gray-200 h-fit  w-full rounded-t-xl p-4'>
+    <div className=' bg-gray-100 h-fit  w-full rounded-t-xl p-4'>
       <div className=" w-full flex items-center justify-between">
         <div className="flex gap-3 items-center">
-          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+          <button className=' bg-teal-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleOfficeClickFilter}>
             <CiFilter />
-            <p className=' font-semibold' >Filtrer par semaine</p>
+            <p className=' font-semibold' >Filtrer par agence</p>
           </button>
           <Menu
             id="fade-menu-filter"
-            anchorEl={anchorWeekElFilter}
+            anchorEl={anchorOfficeElFilter}
             keepMounted
-            open={openWeekMenuFilter}
-            onClose={handleCloseWeekMenuFilter}
-            className=' rounded-xl'
-          >
-
-            <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
-            <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
-          </Menu>
-          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
-            <CiFilter />
-            <p className=' font-semibold' >Filtrer par mois</p>
-          </button>
-          <Menu
-            id="fade-menu-filter"
-            anchorEl={anchorMonthElFilter}
-            keepMounted
-            open={openMonthMenuFilter}
-            onClose={handleCloseMonthMenuFilter}
+            open={openOfficeMenuFilter}
+            onClose={handleCloseOfficeMenuFilter}
             className=' rounded-xl'
           >
             {
-              result?.months?.map((month) => (
-                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+              fetchedOffices?.map((office) => (
+                <MenuItem key={office.id} onClick={() => handleFilterOffice(office)} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{office.name}</MenuItem>
               ))
             }
           </Menu>
-          <button className=' bg-white text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+          <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
             <CiFilter />
             <p className=' font-semibold' >Filtrer par année</p>
           </button>
@@ -915,22 +1006,104 @@ const Home = () => {
               ))
             }
           </Menu>
-          <div className=" h-8 w-8 rounded-md bg-white flex flex-col items-center justify-center cursor-pointer" onClick={() => setFilter(false)}>
-            <IoReload />
-          </div>
+          <button className=' bg-green-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par mois</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorMonthElFilter}
+            keepMounted
+            open={openMonthMenuFilter}
+            onClose={handleCloseMonthMenuFilter}
+            className=' rounded-xl'
+          >
+            {
+              result?.months?.map((month) => (
+                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+              ))
+            }
+          </Menu>
+          <button className=' bg-gray-300 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par semaine</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorWeekElFilter}
+            keepMounted
+            open={openWeekMenuFilter}
+            onClose={handleCloseWeekMenuFilter}
+            className=' rounded-xl'
+          >
 
+            <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
+            <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
+          </Menu>
+          <button className=' bg-yellow-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleRangeClickFilter}>
+            <CiFilter />
+            <p className=' font-semibold' >Filtrer par date</p>
+          </button>
+          <Menu
+            id="fade-menu-filter"
+            anchorEl={anchorRangeElFilter}
+            keepMounted
+            open={openRangeMenuFilter}
+            onClose={handleCloseRangeMenuFilter}
+            className=' rounded-xl'
+          >
+            <div className=" p-2">
+              <DatePicker
+                locale={fr}
+                selected={startDate}
+                onChange={onChange}
+                startDate={startDate}
+                endDate={endDate}
+                selectsRange
+                inline
+              />
+              <br />
+              <button onClick={() => {
+                if (endDate === null) {
+                  handleCloseRangeMenuFilter();
+                  handleFilter(formattedStartDate);
+                } else {
+                  handleCloseRangeMenuFilter();
+                  handleWeekFilter(formattedStartDate, formattedEndDate);
+                }
+              }} className=" w-full bg-black text-xs text-white py-2 rounded-md hover:bg-green-500">Valider</button>
+            </div>
+          </Menu>
+          <div className=" py-2 px-3 rounded-md bg-blue-200 flex items-center gap-2 text-xs font-semibold cursor-pointer" onClick={() => {
+            setFilter(false);
+            setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+            setOfficeName(fetchedOffices![0].name);
+            setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+            setOfficeId(fetchedOffices![0].id);
+          }}>
+            <IoReload />
+            <p>Aujourd'hui</p>
+          </div>
         </div>
 
         <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
       </div>
-      <h3 className=" font-bold mt-2">Globale</h3>
+      <div className="flex gap-2 items-center mt-6">
+        <HiOutlineBuildingOffice />
+        <p className=" text-xs font-bold">{officeName.toUpperCase()}</p>
+      </div>
+      <div className="flex gap-2 items-center mt-3 mb-6">
+        <FaRegCalendar />
+        <p className=" text-xs font-bold">{currentDate}</p>
+      </div>
+      <h3 className=" font-bold">Globale</h3>
       <div className=" flex justify-center mt-12">
         <div className=" w-4 bg-black">
         </div>
         <div className="flex bg-white rounded-sm justify-between items-center ">
           <div className="flex w-48 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
-            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
-              <FaClipboardList className=" text-blue" />
+            <div className=" w-12 h-12 bg-blue-500 bg-opacity-20 rounded-full flex justify-center items-center">
+              <FaClipboardList className=" text-blue-600" />
             </div>
             <div>
               <h2 className=" text-sm font-bold">
@@ -942,8 +1115,8 @@ const Home = () => {
             </div>
           </div>
           <div className="flex w-48 h-20 p-4 items-center justify-center gap-4 border-r-[1px] ">
-            <div className=" w-12 h-12 bg-blue bg-opacity-20 rounded-full flex justify-center items-center">
-              <IoTabletLandscape className=" text-blue" />
+            <div className=" w-12 h-12 bg-gray-400 bg-opacity-20 rounded-full flex justify-center items-center">
+              <IoTabletLandscape className=" text-gray-600" />
             </div>
             <div>
               <h2 className=" text-sm font-bold">
@@ -954,35 +1127,45 @@ const Home = () => {
               </p>
             </div>
           </div>
-          <div className="flex w-52 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
-            <div className=" w-12 h-12 bg-green bg-opacity-20 rounded-full flex justify-center items-center">
-              <IoCheckmarkDoneCircleSharp className=" text-green" />
+          <div className="flex w-52 h-20 py-4 items-center justify-center gap-2 border-r-[1px]">
+            <div className=" w-12 h-12 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
+              <IoCheckmarkDoneCircleSharp className=" text-green-600" />
             </div>
             <div>
               <h2 className=" text-sm font-bold">
                 {filter === false ? result?.receives : filterStats.receives}
               </h2>
-              <p className=" text-xs opacity-60">
-                Tickets traités
-              </p>
+              <div className=" flex items-center gap-2">
+                <p className=" text-xs opacity-60">
+                  Tickets traités
+                </p>
+                <p className=" text-xs text-green-500 font-semibold">
+                  {filter === false ? `${result?.receives ? `${((result?.receives / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.receives ? `${((filterStats?.receives / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="flex w-52 h-20 p-4 items-center justify-center gap-4 border-r-[1px]">
-            <div className=" w-12 h-12 bg-green bg-opacity-20 rounded-full flex justify-center items-center">
-              <RiLoader2Fill className=" text-green" />
+          <div className="flex w-52 h-20 py-4 items-center justify-center gap-4 border-r-[1px]">
+            <div className=" w-12 h-12 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
+              <RiLoader2Fill className=" text-red-600" />
             </div>
             <div>
               <h2 className=" text-sm font-bold">
                 {filter === false ? result?.waitings : filterStats.waitings}
               </h2>
-              <p className=" text-xs opacity-60">
-                Tickets en attente
-              </p>
+              <div className=" flex items-center gap-2">
+                <p className=" text-xs opacity-60">
+                  Tickets en attente
+                </p>
+                <p className=" text-xs text-red-500 font-semibold">
+                  {filter === false ? `${result?.waitings ? `${((result?.waitings / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.waitings ? `${((filterStats?.waitings / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                </p>
+              </div>
             </div>
           </div>
           <div className="flex w-60 h-20 p-4 items-center justify-center gap-4">
-            <div className=" w-12 h-12 bg-red bg-opacity-10 rounded-full flex justify-center items-center">
-              <BsStickyFill className=" text-red" />
+            <div className=" w-12 h-12 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
+              <BsStickyFill className=" text-yellow-600" />
             </div>
             <div>
               <h2 className=" text-sm font-bold">
@@ -999,8 +1182,8 @@ const Home = () => {
         <MdTimer size={50} />
         <div className="flex bg-white rounded-sm justify-between items-center ">
           <div className="flex w-52 h-20 py-4 items-center justify-center gap-2 border-r-[1px]">
-            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
-              <MdOutlineTimelapse className=" text-blue" />
+            <div className=" w-12 h-12 bg-red-400 bg-opacity-10 rounded-full flex justify-center items-center">
+              <MdOutlineTimelapse className=" text-red-500" />
             </div>
             <div>
               <h2 className=" text-md font-bold">
@@ -1012,8 +1195,8 @@ const Home = () => {
             </div>
           </div>
           <div className="flex w-58 h-20 py-4 px-2 items-center justify-center gap-2 border-r-[1px]">
-            <div className=" w-12 h-12 bg-blue bg-opacity-10 rounded-full flex justify-center items-center">
-              <MdOutlineTimelapse className=" text-blue" />
+            <div className=" w-12 h-12 bg-green-400 bg-opacity-10 rounded-full flex justify-center items-center">
+              <MdOutlineTimelapse className=" text-green-500" />
             </div>
             <div>
               <h2 className=" text-md font-bold">
@@ -1037,9 +1220,14 @@ const Home = () => {
                   <h2 className=" text-sm font-bold text-green-500">
                     {filter === false ? result?.totalInWaiting : filterStats.totalInWaiting}
                   </h2>
-                  <p className=" text-xs opacity-60">
-                    Oui
-                  </p>
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs opacity-60">
+                      Oui
+                    </p>
+                    <p className=" text-xs text-green-500 font-semibold">
+                      {filter === false ? `${result?.totalInWaiting ? `${((result?.totalInWaiting / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totalInWaiting ? `${((filterStats?.totalInWaiting / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                    </p>
+                  </div>
                 </div>
                 <div className="border-r-[1px]"></div>
                 <div className=" text-center">
@@ -1049,9 +1237,14 @@ const Home = () => {
                   <h2 className=" text-sm font-bold text-red-500">
                     {filter === false ? result?.totalNotInWaiting : filterStats.totalNotInWaiting}
                   </h2>
-                  <p className=" text-xs opacity-60">
-                    Non
-                  </p>
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs opacity-60">
+                      Non
+                    </p>
+                    <p className=" text-xs text-red-500 font-semibold">
+                      {filter === false ? `${result?.totalNotInWaiting ? `${((result?.totalNotInWaiting / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totalNotInWaiting ? `${((filterStats?.totalNotInWaiting / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1069,9 +1262,14 @@ const Home = () => {
                   <h2 className=" text-sm font-bold text-green-500">
                     {filter === false ? result?.totatlInServing : filterStats.totatlInServing}
                   </h2>
-                  <p className=" text-xs opacity-60">
-                    Oui
-                  </p>
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs opacity-60">
+                      Oui
+                    </p>
+                    <p className=" text-xs text-green-500 font-semibold">
+                      {filter === false ? `${result?.totatlInServing ? `${((result?.totatlInServing / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totatlInServing ? `${((filterStats?.totatlInServing / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                    </p>
+                  </div>
                 </div>
                 <div className="border-r-[1px]"></div>
                 <div className=" text-center">
@@ -1081,9 +1279,14 @@ const Home = () => {
                   <h2 className=" text-sm font-bold text-red-500">
                     {filter === false ? result?.totatlNotInServing : filterStats.totatlNotInServing}
                   </h2>
-                  <p className=" text-xs opacity-60">
-                    Non
-                  </p>
+                  <div className=" flex items-center gap-2">
+                    <p className=" text-xs opacity-60">
+                      Non
+                    </p>
+                    <p className=" text-xs text-red-500 font-semibold">
+                      {filter === false ? `${result?.totatlNotInServing ? `${((result?.totatlNotInServing / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totatlNotInServing ? `${((filterStats?.totatlNotInServing / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1094,12 +1297,12 @@ const Home = () => {
       </div>
       <h3 className=" font-bold mb-4">Services</h3>
       <div className=" flex justify-center gap-12 mb-7">
-        <div className=" w-96 bg-white rounded pb-1">
+        <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel('waitingTimeByService', 'Temps moyen d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeByService : result.meanWaitingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Temps moyen d&rsquo;attente</p>
-          <div className="flex gap-4 justify-center my-2">
+          <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
                 result?.meanWaitingTimeByService.map(record => (
@@ -1117,12 +1320,12 @@ const Home = () => {
             }
           </div>
         </div>
-        <div className=" w-96 bg-white rounded pb-1">
+        <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanServingTime", '', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeByService : result.meanServingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Temps moyen de traitement</p>
-          <div className="flex gap-4 justify-center my-2">
+          <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
                 result?.meanServingTimeByService.map(record => (
@@ -1145,7 +1348,7 @@ const Home = () => {
       <div className=" mt-2 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
           <button onClick={() => exportTicketsDataToExcel("allTicketsByService", "Nombre de tickets par Servic", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <h3 className=" text-center p-1">Nombre de tickets par Service</h3>
+          <h3 className=" text-center p-1">Tickets par Service</h3>
           <Bar
             data={{
               labels: filter === false ? result?.appointmentsByService.map(record => record.name) : filterStats?.appointmentsByService.map(record => record.name), // Les noms de vos services
@@ -1191,7 +1394,7 @@ const Home = () => {
             <button onClick={() => exportParticularDataToToExcel("inOptimalWaitingTimeByService", 'Le nombre de ticket dans le temps optimal d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingByService : result.totatlInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket dans le temps optimal d&lsquo;attente</p>
+            <p className=" text-center">Tickets dans le temps optimal d&lsquo;attente</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1203,7 +1406,7 @@ const Home = () => {
                   ))
                   :
                   filterStats?.totatlInWaitingByService.map(record => (
-                    <div key={record.name}  className=" text-center">
+                    <div key={record.name} className=" text-center">
                       <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
                       <p className=" text-xs">{record.name}</p>
                     </div>
@@ -1215,8 +1418,8 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptimalWaitingTimeByService", "Le nombre de ticket en dehors du temps optimal d'attente par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingByService : result.totatlNotInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket en dehors du temps optimal d&lsquo;attente</p>
-            <div className="flex gap-4 justify-center my-2">
+            <p className=" text-center">Tickets en dehors du temps optimal d&lsquo;attente</p>
+            <div className="flex gap-4 justify-center my-2 px-2">
               {
                 filter === false ?
                   result?.totatlNotInWaitingByService.map(record => (
@@ -1238,8 +1441,8 @@ const Home = () => {
           <div className=" bg-white rounded pb-1">
             <button onClick={() => exportParticularDataToToExcel("inOptimalServingTimeByService", "Le nombre de ticket dans le temps optimal de traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingByService : result.totatlInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket dans le temps optimal de traitement</p>
-            <div className="flex gap-4 justify-center my-2">
+            <p className=" text-center">Tickets dans le temps optimal de traitement</p>
+            <div className="flex gap-4 justify-center my-2 px-2">
               {filter === false ?
                 result?.totatlInServingByService.map(record => (
                   <div key={record.name} className=" text-center">
@@ -1261,8 +1464,8 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptimalServingTimeByService", "Le nombre de ticket en dehors du temps optimal traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingByService : result.totatlNotInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket en dehors du temps optimal traitement</p>
-            <div className="flex gap-4 justify-center my-2">
+            <p className=" text-center">Tickets en dehors du temps optimal traitement</p>
+            <div className="flex gap-4 justify-center my-2 px-2">
               {
                 filter === false ?
                   result?.totatlNotInServingByService.map(record => (
@@ -1285,12 +1488,12 @@ const Home = () => {
       </div>
       <h3 className=" font-bold mb-4">Point d&apos;appel</h3>
       <div className=" flex justify-center gap-12 mb-7">
-        <div className=" w-96 bg-white rounded pb-1">
+        <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Temps moyen d&apos;attente</p>
-          <div className="flex gap-4 justify-center my-2">
+          <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
                 result?.meanWaitingTimeBySubService.map(record => (
@@ -1309,12 +1512,12 @@ const Home = () => {
             }
           </div>
         </div>
-        <div className=" w-96 bg-white rounded pb-1">
+        <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanPTimeByService", "Temps moyen de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeBySubService : result.meanServingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Temps moyen de traitement</p>
-          <div className="flex gap-4 justify-center my-2">
+          <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
                 result?.meanServingTimeBySubService.map(record => (
@@ -1337,7 +1540,7 @@ const Home = () => {
       <div className=" mt-8 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
           <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <h3 className=" text-center p-1">Nombre de tickets par Point d&apos;appel</h3>
+          <h3 className=" text-center p-1">Tickets par Point d&apos;appel</h3>
           <Bar
             data={{
               labels: filter === false ? result?.appointmentsBySubService.map(record => record.name) : filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
@@ -1379,13 +1582,13 @@ const Home = () => {
             }} // Utilisation des options typées
           />
         </div>
-        <div className=" w-96">
+        <div className=" w-fit">
           <div className=" bg-white rounded pb-1">
             <button onClick={() => exportParticularDataToToExcel("inOptWTimeBySubService", "Le nombre de ticket dans le temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingBySubService : result.totatlInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket dans le temps optimal d&apos;attente</p>
-            <div className="flex gap-4 justify-center my-2">
+            <p className=" text-center">Tickets dans le temps optimal d&apos;attente</p>
+            <div className="flex gap-4 justify-center my-2 px-2">
               {filter === false ?
                 result?.totatlInWaitingBySubService.map(record => (
                   <div key={record.name} className=" text-center">
@@ -1407,7 +1610,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptWTimeBySubService", "Le nombre de ticket en dehors du temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingBySubService : result.totatlNotInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket en dehors du temps optimal d&apos;attente</p>
+            <p className=" text-center">Tickets en dehors du temps optimal d&apos;attente</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1431,7 +1634,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1">
             <button onClick={() => exportParticularDataToToExcel("inOptSTimeBySubService", "Le nombre de ticket dans le temps optimal de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingBySubService : result.totatlInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket dans le temps optimal de traitement</p>
+            <p className=" text-center">Tickets dans le temps optimal de traitement</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1455,7 +1658,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptSTimeBySubService", "Le nombre de ticket en dehors du temps optimal traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingBySubService : result.totatlNotInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Le nombre de ticket en dehors du temps optimal traitement</p>
+            <p className=" text-center">Tickets en dehors du temps optimal traitement</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1479,40 +1682,68 @@ const Home = () => {
       </div>
 
       <h3 className=" font-bold mt-2">Tickets traités</h3>
-     { filter == false && <div className=" w-full bg-white rounded-md p-4 my-4">
+      {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
         <Line data={{
           labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
           datasets: [
             {
-              label: 'Nombre de ticket prise',
-              data: result.appointmentsByHourSlot.map(record => record.amount ), // Exemple de données pour le nombre total de rendez-vous
+              label: 'Nombre de tickets pris',
+              data: result.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
               borderColor: 'rgba(0, 0, 0, 1)',
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
             },
             {
-              label: 'Nombre de ticket traité',
-              data: result.serveAppointmentsByHourSlot.map(record =>  record.amount ), // Exemple de données pour le nombre traité
+              label: 'Nombre de tickets traités',
+              data: result.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
               borderColor: 'rgba(0, 255, 200, 1)',
               backgroundColor: 'rgba(0, 255, 200, 0.5)',
             },
             {
-              label: 'Nombre de ticket en attente',
-              data: result.serveAppointmentsByHourSlot.map(record => result.appointments -  record.amount ), // Exemple de données pour le nombre en attente
+              label: 'Nombre de tickets en attente',
+              data: calculateWaitingAppointments(result?.appointmentsByHourSlot, result.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
               borderColor: 'rgba(255, 0, 0, 1)',
               backgroundColor: 'rgba(255, 0, 0, 0.5)',
             },
           ],
         }} />
 
-      </div>}
+      </div>
+        : <div className=" w-full bg-white rounded-md p-4 my-4">
+          <Line data={{
+            labels: filterStats?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
+            datasets: [
+              {
+                label: 'Nombre de tickets pris',
+                data: filterStats.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
+                borderColor: 'rgba(0, 0, 0, 1)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              },
+              {
+                label: 'Nombre de tickets traités',
+                data: filterStats.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
+                borderColor: 'rgba(0, 255, 200, 1)',
+                backgroundColor: 'rgba(0, 255, 200, 0.5)',
+              },
+              {
+                label: 'Nombre de tickets en attente',
+                data: calculateWaitingAppointments(filterStats?.appointmentsByHourSlot, filterStats.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
+                borderColor: 'rgba(255, 0, 0, 1)',
+                backgroundColor: 'rgba(255, 0, 0, 0.5)',
+              }
+            ]
+          }} />
+
+        </div>
+      }
       <div className=" mt-10">
         <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
         <table className="w-full table-fixed">
           <thead>
             <tr className=" bg-black">
+              <th className="w-1/3 px-3 py-4 text-left text-white text-xs font-semibold">Date d&apos;arrivée</th>
               <th className="w-1/3 px-3 py-4 text-left text-white text-xs font-semibold">Heure d&apos;arrivée</th>
-              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">No d&apos;arrivée</th>
-              <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">No de ticket</th>
+              <th className="w-1/5 py-4 text-left text-white text-xs font-semibold">No d&apos;arrivée</th>
+              <th className="w-1/5 py-4 text-left text-white text-xs font-semibold">No de ticket</th>
               <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Service</th>
               <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Point d&apos;appel</th>
               <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Heure d&apos;appel</th>
@@ -1526,10 +1757,13 @@ const Home = () => {
             seeAll ? filter === false ? result.appointmentList?.map((appointment) => (
               <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className='text-xs py-2 px-3 font-semibold'>
+                  {appointment.date}
+                </td>
+                <td className='text-xs py-2 px-3 font-semibold'>
                   {appointment.time}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.id}
+                  {appointment.num}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.num}
@@ -1562,10 +1796,13 @@ const Home = () => {
                 {filterStats.appointmentList?.map((appointment) => (
                   <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td className='text-xs py-2 px-3 font-semibold'>
+                      {appointment.date}
+                    </td>
+                    <td className='text-xs py-2 px-3 font-semibold'>
                       {appointment.time}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.id}
+                      {appointment.num}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.num}
@@ -1599,6 +1836,9 @@ const Home = () => {
                     Total
                   </td>
                   <td className=' text-xs opacity-60'>
+
+                  </td>
+                  <td className=' text-xs opacity-60'>
                     {filterStats.appointments}
                   </td>
                   <td className=' text-xs opacity-60'>
@@ -1611,13 +1851,13 @@ const Home = () => {
                     {filterStats.subServices}
                   </td>
                   <td className=' text-xs opacity-60'>
-                    {filterStats.appointmentList[filterStats.appointmentList.length - 1].callTime}
+
                   </td>
                   <td className=' text-xs opacity-60'>
-                    {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                   </td>
                   <td className=' text-xs opacity-60'>
-                    {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                    {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                   </td>
                   <td className=' text-xs opacity-60'>
                     {filterStats.appointmentList.filter(element => element.transfered).length}
@@ -1630,14 +1870,17 @@ const Home = () => {
               filter === false ?
                 <>
                   {result.appointmentList?.map((appointment, index) => {
-                    if (index < 14) {
+                    if (index < 16) {
                       return (
                         <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.date}
+                          </td>
                           <td className='text-xs py-2 px-3 font-semibold'>
                             {appointment.time}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.id}
+                            {appointment.num}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.num}
@@ -1673,7 +1916,10 @@ const Home = () => {
                       Total
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {result.appointments}
+
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {filterStats.appointments}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {result.appointments}
@@ -1685,13 +1931,13 @@ const Home = () => {
                       {result.subServices}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {result.appointmentList[result.appointmentList.length - 1]?.callTime}
+
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {format(result.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                      {result.appointmentList?.length > 0 && format((result.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / result.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {format(result.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                      {result.appointmentList?.length > 0 && format((result.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / result.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {result.appointmentList.filter(element => element.transfered).length}
@@ -1703,14 +1949,17 @@ const Home = () => {
                 </> :
                 <>
                   {filterStats.appointmentList?.map((appointment, index) => {
-                    if (index < 14) {
+                    if (index < 16) {
                       return (
                         <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.date}
+                          </td>
                           <td className='text-xs py-2 px-3 font-semibold'>
                             {appointment.time}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.id}
+                            {appointment.num}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.num}
@@ -1745,6 +1994,9 @@ const Home = () => {
                       Total
                     </td>
                     <td className=' text-xs opacity-60'>
+
+                    </td>
+                    <td className=' text-xs opacity-60'>
                       {filterStats.appointments}
                     </td>
                     <td className=' text-xs opacity-60'>
@@ -1757,13 +2009,13 @@ const Home = () => {
                       {filterStats.subServices}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {filterStats.appointmentList[filterStats.appointmentList.length - 1]?.callTime}
+
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                      {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {format(filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) * 60 * 1000, 'HH:mm:ss')}
+                      {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {filterStats.appointmentList.filter(element => element.transfered).length}

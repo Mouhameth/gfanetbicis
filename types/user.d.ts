@@ -6,7 +6,11 @@ interface User {
     active: boolean;
     Role: Role;
     role: Role;
+    subservice?: SubService;
+    services?: Service[];
+    officeId: number;
     createdAt: Date;
+    office?: Office
 }
 
 interface Role{

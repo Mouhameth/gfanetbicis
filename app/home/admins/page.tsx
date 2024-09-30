@@ -15,8 +15,6 @@ import { CiFilter } from 'react-icons/ci';
 import { AiFillCloseCircle } from 'react-icons/ai';
 import { FiEdit3 } from 'react-icons/fi';
 import { TbTallymark4 } from 'react-icons/tb';
-import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import useAxiosAuth from '@/hooks/useAxiosAuth';
 import useSWR from 'swr';
 
@@ -37,6 +35,7 @@ const schema = zod.object({
     required_error: "le role est obligatoire",
     invalid_type_error: "le role est obligatoire"
   }).min(1, { message: "le role est obligatoire" })
+  
 }).required();
 type FormData = zod.infer<typeof schema>;
 
@@ -104,7 +103,8 @@ const Admins = () => {
     },
     phone: '',
     active: false,
-    createdAt: new Date()
+    createdAt: new Date(),
+    officeId: 0
   };
 
   const [userToUpdate, setUserToUpdate] = useState(userToDelete);
@@ -160,7 +160,6 @@ const Admins = () => {
     try {
       setEditLoading(true);
       data.active = userToUpdate.active;
-      console.log(data);
 
       const res = await axiosAuth.put(userUrl, data);
       if (res.status == 200) {
@@ -340,11 +339,11 @@ const Admins = () => {
         <option value="" selected>Sélectionner le rôle</option>
         {
           fetchedRoles?.map((role) => (
-            <option key={role.id} value={role.id}>
+            role.name !== "user" && <option key={role.id} value={role.id}>
               <>
                 {role.name.toLocaleLowerCase() === "root" && <p>administrateur</p>}
-                {role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
-                {role.name.toLocaleLowerCase() === "user" && <p>Agent</p>}
+                {role.name.toLocaleLowerCase() === "admin" && <p>superviseur</p>}
+                {role.name.toLocaleLowerCase() === "marketing" && <p>marketing et communication</p>}
               </>
             </option>
           ))
@@ -415,17 +414,17 @@ const Admins = () => {
         <option value={userToUpdate.Role.id} selected>
           <>
             {userToUpdate.Role.name.toLocaleLowerCase() === "root" && <p>administrateur</p>}
-            {userToUpdate.Role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
-            {userToUpdate.Role.name.toLocaleLowerCase() === "user" && <p>Agent</p>}
+            {userToUpdate.Role.name.toLocaleLowerCase() === "admin" && <p>superviseur</p>}
+            {userToUpdate.Role.name.toLocaleLowerCase() === "marketing" && <p>marketing et communication</p>}
           </>
         </option>
         {
           fetchedRoles?.map((role) => (
-            <option key={role.id} value={role.id}>
+            role.name !== "user" && <option key={role.id} value={role.id}>
               <>
                 {role.name.toLocaleLowerCase() === "root" && <p>administrateur</p>}
-                {role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
-                {role.name.toLocaleLowerCase() === "user" && <p>Agent</p>}
+                {role.name.toLocaleLowerCase() === "admin" && <p>superviseur</p>}
+                {role.name.toLocaleLowerCase() === "marketing" && <p>marketing et communication</p>}
               </>
             </option>
           ))
@@ -493,6 +492,7 @@ const Admins = () => {
               </thead>
               {
                 userList?.map((user) => (
+                  user.Role.name !== "user" && 
                   <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td className=' flex gap-2 p-2 items-center'>
                       <BsPersonCircle size={32} />
@@ -516,7 +516,7 @@ const Admins = () => {
                       {<>
                         {user.Role.name.toLocaleLowerCase() === "root" && <p>super administrateur</p>}
                         {user.Role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
-                        {user.Role.name.toLocaleLowerCase() === "user" && <p>Agent</p>}
+                        {user.Role.name.toLocaleLowerCase() === "marketing" && <p>Marketing et communication</p>}
                       </>
                       }
                     </td>
