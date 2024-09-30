@@ -1082,7 +1082,7 @@ const Home = () => {
             setOfficeId(fetchedOffices![0].id);
           }}>
             <IoReload />
-            <p>Aujourd'hui</p>
+            <p>Aujourd&rsquo;hui</p>
           </div>
         </div>
 

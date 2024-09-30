@@ -405,7 +405,7 @@ const Report = () => {
                         setDescription(`Ceci represente l'ensemble des données de toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
                     }}>
                         <IoReload />
-                        <p>Aujourd'hui</p>
+                        <p>Aujourd&rsquo;hui</p>
                     </div>
 
                 </div>
