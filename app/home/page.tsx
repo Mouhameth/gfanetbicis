@@ -349,7 +349,7 @@ const Home = () => {
       };
       gloabl.push(gHeaders);
       gloabl.push({
-        'Services': stats.receives,
+        'Services': stats.services,
         'Points d\'appels': stats.subServices,
         'Tickets traités': stats.receives,
         'Tickets en attente': stats.waitings,
