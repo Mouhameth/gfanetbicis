@@ -1682,7 +1682,7 @@ const Home = () => {
       </div>
 
       <h3 className=" font-bold mt-2">Tickets traités</h3>
-      {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
+      {filter == false && <div className=" w-full bg-white rounded-md p-4 my-4">
         <Line data={{
           labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
           datasets: [
@@ -1708,32 +1708,6 @@ const Home = () => {
         }} />
 
       </div>
-        : <div className=" w-full bg-white rounded-md p-4 my-4">
-          <Line data={{
-            labels: filterStats?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
-            datasets: [
-              {
-                label: 'Nombre de tickets pris',
-                data: filterStats.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
-                borderColor: 'rgba(0, 0, 0, 1)',
-                backgroundColor: 'rgba(0, 0, 0, 0.5)',
-              },
-              {
-                label: 'Nombre de tickets traités',
-                data: filterStats.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
-                borderColor: 'rgba(0, 255, 200, 1)',
-                backgroundColor: 'rgba(0, 255, 200, 0.5)',
-              },
-              {
-                label: 'Nombre de tickets en attente',
-                data: calculateWaitingAppointments(filterStats?.appointmentsByHourSlot, filterStats.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
-                borderColor: 'rgba(255, 0, 0, 1)',
-                backgroundColor: 'rgba(255, 0, 0, 0.5)',
-              }
-            ]
-          }} />
-
-        </div>
       }
       <div className=" mt-10">
         <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
