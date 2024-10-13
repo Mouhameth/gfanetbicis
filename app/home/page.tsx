@@ -60,12 +60,17 @@ const Home = () => {
   const [officeName, setOfficeName] = useState('');
   useEffect(() => {
     useChangeTitle.onChanged("Rapport global");
-    setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+    const date = new Date(new Date().getTime());
+    const hours = String(date.getUTCHours()).padStart(2, '0');
+    const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+    const pickedTime = `${hours}:${minutes}:${seconds}`;
+    setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
     setFormattedStartDate(format(startDate, 'dd/MM/yyyy'));
     if (fetchedOffices && fetchedOffices.length > 0) {
       setOfficeName(fetchedOffices![0].name)
     }
-    setDescription(`Ceci represente l'ensemble des données pour l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+    setDescription(`Ceci represente l'ensemble des données pour l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')} à ${pickedTime}`);
   }, [result, fetchedOffices]);
   const emptyStats: Stats = {
     subServices: 0,
@@ -146,17 +151,23 @@ const Home = () => {
   };
 
   const handleFilter = async (date: string) => {
-    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} à la date du ${date}`)
+    const time = new Date(new Date().getTime());
+    const hours = String(time.getUTCHours()).padStart(2, '0');
+    const minutes = String(time.getUTCMinutes()).padStart(2, '0');
+    const seconds = String(time.getUTCSeconds()).padStart(2, '0');
+    const pickedTime = `${hours}:${minutes}:${seconds}`;
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} à la date du ${date} à ${pickedTime}`)
 
     try {
       setFilter(true);
       setLoading(true);
+
       setCurrentDate(`L'année ${date}`);
       if (date.split('/').length === 2) {
         setCurrentDate(`Le mois de ${format(`${date.split('/')[0]}/01/${date.split('/')[1]}`, 'MMMM yyyy', { locale: fr })}`);
       }
       if (date.split('/').length === 3) {
-        setCurrentDate(`La journée du ${format(`${date.split('/')[1]}/${date.split('/')[0]}/${date.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+        setCurrentDate(`La journée du ${format(`${date.split('/')[1]}/${date.split('/')[0]}/${date.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
       }
 
       const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date, id: officeId }));
@@ -201,20 +212,50 @@ const Home = () => {
     }
   };
 
-  const handleWeekFilter = async (start: string, end: string) => {
-    const date1 = new Date(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`);
-    const date2 = new Date();
-    // Calculer la différence en temps (en millisecondes)
-    const differenceInTime = date2.getTime() - date1.getTime();
+  const amountOfDays = (start: string, end: string): number => {
+    // Convertir les chaînes de dates en objets Date
+    const startDate = new Date(start);
+    const endDate = new Date(end);
 
-    // Convertir la différence de temps en jours
-    const differenceInDays = Math.ceil(differenceInTime / (1000 * 3600 * 24));
-    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours: ${differenceInDays < 7 ? differenceInDays : 7}`)
+    // Valider les dates
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      throw new Error("Les dates ne sont pas valides");
+    }
+  
+    // Si la date de début est après la date de fin, on inverse
+    if (startDate > endDate) {
+      throw new Error("La date de début doit être antérieure à la date de fin");
+    }
+  
+    let count = 0;
+    let currentDate = new Date(startDate);
+  
+    // Parcourir chaque jour entre les deux dates
+    while (currentDate <= endDate) {
+      const dayOfWeek = currentDate.getDay();
+      // Compter uniquement les jours ouvrables (lundi à vendredi)
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        count++;
+      }
+      // Passer au jour suivant
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+  
+    return count;
+  };
+  
+  
+  
+
+  const handleWeekFilter = async (start: string, end: string) => {
+    const differenceInDays = amountOfDays(`${start.split('/')[2]}/${start.split('/')[1]}/${start.split('/')[0]}`,`${end.split('/')[2]}/${end.split('/')[1]}/${end.split('/')[0]}`);
+    
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours: ${differenceInDays}`)
 
     try {
       setFilter(true);
       setLoading(true);
-      setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours: ${differenceInDays < 7 ? differenceInDays : 7}`);
+      setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours: ${differenceInDays}`);
       const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, id: officeId }));
       if (res.status == 200) {
         setFilterStats(res.data);
@@ -948,13 +989,10 @@ const Home = () => {
 
     // Calcul du nombre de tickets en attente pour chaque période
     for (let i = 0; i < appointmentsByHourSlot.length; i++) {
-      console.log(serveAppointmentsByHourSlot[i]);
-      
       pendingTickets += appointmentsByHourSlot[i].amount - serveAppointmentsByHourSlot[i].amount; // Ajout du résultat de la soustraction à l'accumulateur
       pendingTicketsByHourSlot.push(pendingTickets); // Stockage du résultat dans le tableau
     }
-    console.log(pendingTicketsByHourSlot);
-    
+
     return pendingTicketsByHourSlot;
   }
 
