@@ -16,13 +16,13 @@ import useSWR from "swr";
 import useAxiosAuth from "@/hooks/useAxiosAuth";
 import * as FileSaver from 'file-saver';
 import XLSX from 'sheetjs-style';
-import { AwaitedReactNode, JSXElementConstructor, ReactElement, ReactNode, ReactPortal, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
 import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
 import { FaClipboardList, FaRegCalendar } from "react-icons/fa";
 import { BsStickyFill } from "react-icons/bs";
 import { CiFilter } from "react-icons/ci";
-import { Menu, MenuItem } from "@mui/material";
+import { Menu, MenuItem, Checkbox, Button, ListItemText } from "@mui/material";
 import { format } from 'date-fns';
 import { fr } from "date-fns/locale/fr";
 import toast from "react-hot-toast";
@@ -54,7 +54,7 @@ const Home = () => {
   const [formattedStartDate, setFormattedStartDate] = useState('');
   const [formattedEndDate, setFormattedEndDate] = useState('');
   const { data: fetchedOffices, isLoading: officeLoading, error: officeError } = useSWR(officeUrl, () => axiosAuth.get<Office[]>(officeUrl).then((res) => res.data));
-  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), id: officeId })).then((res) => res.data));
+  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: [1] })).then((res) => res.data));
   const useChangeTitle = useChangeHeaderTitle();
   const [currentDate, setCurrentDate] = useState('');
   const [officeName, setOfficeName] = useState('');
@@ -108,13 +108,18 @@ const Home = () => {
     totatlInServingBySubService: [],
     totatlNotInServingBySubService: [],
     appointmentsByHourSlot: [],
-    serveAppointmentsByHourSlot: []
+    serveAppointmentsByHourSlot: [],
+    appointmentsByDays: [],
+    appointmentsBySubServiceByDays: [],
+    totalByOffices: []
   }
 
   const [filterStats, setFilterStats] = useState(emptyStats);
   const [filter, setFilter] = useState(false);
   const [loading, setLoading] = useState(false);
   const [seeAll, setSeeAll] = useState(false);
+  const [showTotal, setShowTotal] = useState(false);
+  const [filterTwoDate, setFilterTwoDate] = useState(false);
   const [description, setDescription] = useState('');
   const [anchorOfficeElFilter, setAnchorOfficeElFilter] = useState(null);
   const openOfficeMenuFilter = Boolean(anchorOfficeElFilter);
@@ -144,6 +149,7 @@ const Home = () => {
 
   const handleOfficeClickFilter = (event: any) => {
     setAnchorOfficeElFilter(event.currentTarget);
+    setSelectedOffices([]);
   };
 
   const handleRangeClickFilter = (event: any) => {
@@ -151,26 +157,22 @@ const Home = () => {
   };
 
   const handleFilter = async (date: string) => {
-    const time = new Date(new Date().getTime());
-    const hours = String(time.getUTCHours()).padStart(2, '0');
-    const minutes = String(time.getUTCMinutes()).padStart(2, '0');
-    const seconds = String(time.getUTCSeconds()).padStart(2, '0');
-    const pickedTime = `${hours}:${minutes}:${seconds}`;
-    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} à la date du ${date} à ${pickedTime}`)
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} à la date du ${date}`)
 
     try {
       setFilter(true);
       setLoading(true);
+      setFilterTwoDate(false);
 
       setCurrentDate(`L'année ${date}`);
       if (date.split('/').length === 2) {
         setCurrentDate(`Le mois de ${format(`${date.split('/')[0]}/01/${date.split('/')[1]}`, 'MMMM yyyy', { locale: fr })}`);
       }
       if (date.split('/').length === 3) {
-        setCurrentDate(`La journée du ${format(`${date.split('/')[1]}/${date.split('/')[0]}/${date.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
+        setCurrentDate(`La journée du ${format(`${date.split('/')[1]}/${date.split('/')[0]}/${date.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
       }
 
-      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date, id: officeId }));
+      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date, ids: selectedOffices.length === 0 ? [officeId] : selectedOffices }));
       if (res.status == 200) {
         setFilterStats(res.data);
       }
@@ -184,32 +186,61 @@ const Home = () => {
     }
   };
 
-  const handleFilterOffice = async (office: Office) => {
-
-    setOfficeId(office.id);
-    setOfficeName(office.name);
-    setDescription(`Ceci represente l'ensemble des données de l'agence ${office.name} à la date du ${now.toLocaleDateString('fr-FR')}`)
-    setCurrentDate("Aujourd'hui");
-    try {
-      setFilter(true);
-      setLoading(true);
-      setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
-
-      const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), id: office.id }));
-      if (res.status == 200) {
-        console.log(res.data);
-
-        setFilterStats(res.data);
+  const handleFilterOffice = async () => {
+    if (selectedOffices.length > 0) {
+      setFilterTwoDate(false);
+      if (selectedOffices.length === 1) {
+        const office = fetchedOffices!.find((office) => office.id === selectedOffices[0]);
+        setOfficeId(office!.id);
+        setOfficeName(office!.name);
+        setDescription(`Ceci represente l'ensemble des données de l'agence ${office!.name} à la date du ${now.toLocaleDateString('fr-FR')}`);
+        setShowTotal(false);
+      } else {
+        let officeText = "";
+        for (let index = 0; index < selectedOffices!.length; index++) {
+          if (index > 0) {
+            officeText = officeText + " - ";
+          }
+          const id = selectedOffices![index];
+          const office = fetchedOffices!.find((office) => office.id == id);
+          if (office) {
+            setOfficeId(office.id);
+            officeText = officeText + office.name;
+          }
+        }
+        setOfficeName(officeText!);
+        setDescription(`Ceci represente l'ensemble des données de l'agence ${officeText} à la date du ${now.toLocaleDateString('fr-FR')}`);
+        setShowTotal(true);
       }
-    } catch (error) {
-      setFilter(false);
-      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
-    } finally {
-      setLoading(false);
-      setAnchorMonthElFilter(null);
-      setAnchorYearElFilter(null);
-      handleCloseOfficeMenuFilter();
+
+      setCurrentDate("Aujourd'hui");
+      try {
+        setFilter(true);
+        setLoading(true);
+        const date = new Date(new Date().getTime());
+        const hours = String(date.getUTCHours()).padStart(2, '0');
+        const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+        const pickedTime = `${hours}:${minutes}:${seconds}`;
+        setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
+
+        const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: selectedOffices.length == 1 ? [officeId] : selectedOffices }));
+        if (res.status == 200) {
+          console.log(res.data);
+
+          setFilterStats(res.data);
+        }
+      } catch (error) {
+        setFilter(false);
+        toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+      } finally {
+        setLoading(false);
+        setAnchorMonthElFilter(null);
+        setAnchorYearElFilter(null);
+        handleCloseOfficeMenuFilter();
+      }
     }
+
   };
 
   const amountOfDays = (start: string, end: string): number => {
@@ -221,15 +252,15 @@ const Home = () => {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       throw new Error("Les dates ne sont pas valides");
     }
-  
+
     // Si la date de début est après la date de fin, on inverse
     if (startDate > endDate) {
       throw new Error("La date de début doit être antérieure à la date de fin");
     }
-  
+
     let count = 0;
     let currentDate = new Date(startDate);
-  
+
     // Parcourir chaque jour entre les deux dates
     while (currentDate <= endDate) {
       const dayOfWeek = currentDate.getDay();
@@ -240,26 +271,40 @@ const Home = () => {
       // Passer au jour suivant
       currentDate.setDate(currentDate.getDate() + 1);
     }
-  
+
     return count;
   };
-  
-  
-  
+
+  const [selectedOffices, setSelectedOffices] = useState<number[]>([]);
+
+  // Gérer la sélection des bureaux
+  const handleToggleOffice = (officeId: number) => {
+    setSelectedOffices(prevSelected =>
+      prevSelected.includes(officeId)
+        ? prevSelected.filter(id => id !== officeId)
+        : [...prevSelected, officeId]
+    );
+    console.log(selectedOffices);
+
+  };
+
 
   const handleWeekFilter = async (start: string, end: string) => {
-    const differenceInDays = amountOfDays(`${start.split('/')[2]}/${start.split('/')[1]}/${start.split('/')[0]}`,`${end.split('/')[2]}/${end.split('/')[1]}/${end.split('/')[0]}`);
-    
+    const differenceInDays = amountOfDays(`${start.split('/')[2]}/${start.split('/')[1]}/${start.split('/')[0]}`, `${end.split('/')[2]}/${end.split('/')[1]}/${end.split('/')[0]}`);
+
     setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours: ${differenceInDays}`)
 
     try {
       setFilter(true);
+      setFilterTwoDate(true);
       setLoading(true);
       setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours: ${differenceInDays}`);
-      const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, id: officeId }));
+      const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, ids: selectedOffices.length === 0 ? [officeId] : selectedOffices }));
       if (res.status == 200) {
         setFilterStats(res.data);
       }
+      console.log(res);
+
     } catch (error) {
       setFilter(false);
       toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
@@ -680,26 +725,12 @@ const Home = () => {
       });
 
       notInServingTimeSubservice.push(notInServSubData);
-
-      // Convertir les données en feuille de calcul
       const gWs = XLSX.utils.json_to_sheet(gloabl, { skipHeader: true });
       const gTWs = XLSX.utils.json_to_sheet(globalTime, { skipHeader: true });
       const appWs = XLSX.utils.json_to_sheet(appointments, { skipHeader: true });
       const servicesWs = XLSX.utils.json_to_sheet(services, { skipHeader: true });
       const mTWs = XLSX.utils.json_to_sheet(meanTimeService, { skipHeader: true });
       const mSWs = XLSX.utils.json_to_sheet(meanServingTimeService, { skipHeader: true });
-      // const inMWs = XLSX.utils.json_to_sheet(inWaitingTimeService, { skipHeader: true });
-      // const notInMWs = XLSX.utils.json_to_sheet(notInWaitingTimeService, { skipHeader: true });
-      // const inMSs = XLSX.utils.json_to_sheet(inServingTimeService, { skipHeader: true });
-      // const notInMSs = XLSX.utils.json_to_sheet(notInServingTimeService, { skipHeader: true });
-      // const subServicesWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
-      // const mTWsub = XLSX.utils.json_to_sheet(meanTimeSubService, { skipHeader: true });
-      // const mSWsub = XLSX.utils.json_to_sheet(meanServingTimeSubService, { skipHeader: true });
-      // const inMWSub = XLSX.utils.json_to_sheet(inWaitingTimeSubservice, { skipHeader: true });
-      // const notInMWSub = XLSX.utils.json_to_sheet(notInWaitingTimeSubservice, { skipHeader: true });
-      // const inMSsub = XLSX.utils.json_to_sheet(inServingTimeSubservice, { skipHeader: true });
-      // const notInMSsub = XLSX.utils.json_to_sheet(notInServingTimeSubservice, { skipHeader: true });
-      // Créer un classeur et ajouter la feuille de calcul
       const appWb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(appWb, gWs, 'Globals');
       XLSX.utils.book_append_sheet(appWb, gTWs, 'Temps globaux');
@@ -707,17 +738,6 @@ const Home = () => {
       XLSX.utils.book_append_sheet(appWb, servicesWs, 'Services');
       XLSX.utils.book_append_sheet(appWb, mTWs, 'TEM par Service');
       XLSX.utils.book_append_sheet(appWb, mSWs, 'TTM par Service');
-      // XLSX.utils.book_append_sheet(appWb, inMWs, 'Feuille 7');
-      // XLSX.utils.book_append_sheet(appWb, notInMWs, 'Feuille 18');
-      // XLSX.utils.book_append_sheet(appWb, inMSs, 'Feuille 9');
-      // XLSX.utils.book_append_sheet(appWb, notInMSs, 'Feuille 10');
-      // XLSX.utils.book_append_sheet(appWb, subServicesWs, 'Point d\'appel');
-      // XLSX.utils.book_append_sheet(appWb, mTWsub, 'Mean Waiting Time By Subservice');
-      // XLSX.utils.book_append_sheet(appWb, mSWsub, 'Mean Serving Time By Subservice');
-      // XLSX.utils.book_append_sheet(appWb, inMWSub, 'Feuille 14');
-      // XLSX.utils.book_append_sheet(appWb, notInMWSub, 'Feuille 15');
-      // XLSX.utils.book_append_sheet(appWb, inMSsub, 'Feuille 16');
-      // XLSX.utils.book_append_sheet(appWb, notInMSsub, 'Feuille 17');
 
       // Convertir le classeur en tableau d'octets
       const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
@@ -989,10 +1009,25 @@ const Home = () => {
 
     // Calcul du nombre de tickets en attente pour chaque période
     for (let i = 0; i < appointmentsByHourSlot.length; i++) {
-      pendingTickets += appointmentsByHourSlot[i].amount - serveAppointmentsByHourSlot[i].amount; // Ajout du résultat de la soustraction à l'accumulateur
-      pendingTicketsByHourSlot.push(pendingTickets); // Stockage du résultat dans le tableau
-    }
+      const appointments = parseInt(appointmentsByHourSlot[i].amount, 10) || 0; // Si la valeur est NaN, elle sera remplacée par 0
+      const served = parseInt(serveAppointmentsByHourSlot[i].amount, 10) || 0;
 
+      // 1. Ajouter les nouveaux tickets du créneau actuel
+      pendingTickets += appointments;
+
+      // 2. Soustraire les tickets servis dans ce créneau
+      pendingTickets -= served;
+
+      // 3. S'assurer que le nombre de tickets en attente ne soit pas négatif
+      pendingTickets = Math.max(0, pendingTickets);
+
+      // Empêcher les valeurs négatives
+      pendingTickets = Math.max(0, pendingTickets);
+
+      pendingTicketsByHourSlot.push(pendingTickets);
+    }
+    // pendingTickets = appointmentsByHourSlot[i].amount + pendingTickets - serveAppointmentsByHourSlot[i].amount; // Ajout du résultat de la soustraction à l'accumulateur
+    // pendingTicketsByHourSlot.push(pendingTickets); // Stockage du résultat dans le tableau
     return pendingTicketsByHourSlot;
   }
 
@@ -1020,11 +1055,33 @@ const Home = () => {
             onClose={handleCloseOfficeMenuFilter}
             className=' rounded-xl'
           >
-            {
-              fetchedOffices?.map((office) => (
-                <MenuItem key={office.id} onClick={() => handleFilterOffice(office)} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{office.name}</MenuItem>
-              ))
-            }
+            {fetchedOffices?.map((office) => (
+              <MenuItem
+                key={office.id}
+                className="bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs h-10 "
+              // On retire onClick pour éviter l'interférence avec le Checkbox
+              >
+                <Checkbox
+                  checked={selectedOffices.includes(office.id)}
+                  onChange={() => handleToggleOffice(office.id)}
+                  color="default"
+                  onClick={(e) => e.stopPropagation()} // Empêcher le clic de se propager
+                />
+                <ListItemText primary={office.name} />
+              </MenuItem>
+            ))}
+
+            {/* Bouton Rechercher */}
+            <div className="flex justify-center p-2">
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleFilterOffice}
+                className="bg-black text-white rounded-full w-full py-2"
+              >
+                Valider
+              </Button>
+            </div>
           </Menu>
           <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
             <CiFilter />
@@ -1114,10 +1171,18 @@ const Home = () => {
           </Menu>
           <div className=" py-2 px-3 rounded-md bg-blue-200 flex items-center gap-2 text-xs font-semibold cursor-pointer" onClick={() => {
             setFilter(false);
-            setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+            setFilterTwoDate(false);
+            const date = new Date(new Date().getTime());
+            const hours = String(date.getUTCHours()).padStart(2, '0');
+            const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(date.getUTCSeconds()).padStart(2, '0');
+            const pickedTime = `${hours}:${minutes}:${seconds}`;
+            setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
             setOfficeName(fetchedOffices![0].name);
             setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
             setOfficeId(fetchedOffices![0].id);
+            setShowTotal(false);
+            setSelectedOffices([]);
           }}>
             <IoReload />
             <p>Aujourd&rsquo;hui</p>
@@ -1524,7 +1589,181 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <h3 className=" font-bold mb-4">Point d&apos;appel</h3>
+      <h3 className=" font-bold my-4">Point d&apos;appel</h3>
+      <div className=" flex justify-center my-8">
+        <div className=" w-4 bg-black">
+        </div>
+        <div className="flex bg-white rounded-sm justify-between items-center ">
+          <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+            <div className=" flex items-center gap-2 justify-center">
+              <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
+              </div>
+              <p className=" text-xs font-bold">Tickets traités par point d'appel</p>
+            </div>
+            <div className="flex gap-3 justify-center my-2 px-2">
+              {
+                filter === false ? result?.serveAppointmentsBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{record.amount}</p>
+                    <div className=" flex items-center gap-1 mt-1">
+                      <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                      {result?.serveAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / result?.receives) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                    </div>
+                  </div>
+                ))
+                  :
+                  filterStats?.serveAppointmentsBySubService.map(record => (
+                    <div key={record.name} className=" text-center">
+                      <p className=" text-xs font-semibold">{record.amount}</p>
+                      <div className=" flex items-center gap-1 mt-1">
+                        <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                        {filterStats?.serveAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.receives) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                      </div>
+                    </div>))
+              }
+            </div>
+          </div>
+          <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+            <div className=" flex items-center gap-2 justify-center">
+              <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                <RiLoader2Fill className=" text-red-600 w-3" />
+              </div>
+              <p className=" text-xs font-bold">Tickets en attente par point d'appel</p>
+            </div>
+            <div className="flex gap-3 justify-center my-2 px-2">
+              {filter === false ? result?.waitingAppointmentsBySubService.map(record => (
+                <div key={record.name} className=" text-center">
+                  <p className=" text-xs font-semibold">{record.amount}</p>
+                  <div className=" flex items-center gap-1 mt-1">
+                    <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                    {result?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {result?.waitings > 0 ?((record.amount / result?.waitings) * 100).toFixed(): 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                  </div>
+                </div>
+              ))
+                :
+                filterStats?.waitingAppointmentsBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{record.amount}</p>
+                    <div className=" flex items-center gap-1 mt-1">
+                      <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                      {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {filterStats?.waitings > 0? ((record.amount / filterStats?.waitings) * 100).toFixed(): 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+          <div className=" w-fit h-20 p-4 px-2">
+            <div className=" flex items-center gap-2 justify-center">
+              <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                <BsStickyFill className=" text-yellow-600 w-2" />
+              </div>
+              <p className=" text-xs font-bold">Total tickets par point d'appel</p>
+            </div>
+            <div className="flex gap-3 justify-center my-2 px-2">
+              {filter === false ? result?.appointmentsBySubService.map(record => (
+                <div key={record.name} className=" text-center">
+                  <p className=" text-xs font-semibold">{record.amount}</p>
+                  <div className=" flex items-center gap-1 mt-1">
+                    <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                    {result?.appointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / result?.appointments) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                  </div>
+                </div>
+              )) :
+                filterStats?.appointmentsBySubService.map(record => (
+                  <div key={record.name} className=" text-center">
+                    <p className=" text-xs font-semibold">{record.amount}</p>
+                    <div className=" flex items-center gap-1 mt-1">
+                      <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                      {filterStats?.appointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.appointments) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                    </div>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      {
+        filterTwoDate === true && <div>
+          {
+            filterStats.appointmentsBySubServiceByDays.map(item =>
+              <div>
+                <p className=" bg-white p-2 rounded-md mt-4 w-fit text-xs font-bold mx-auto">{item.date}</p>
+                <div className=" flex justify-center mb-8">
+                  <div className=" w-4 bg-black">
+                  </div>
+                  <div className="flex bg-white rounded-sm justify-between items-center ">
+                    <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+                      <div className=" flex items-center gap-2 justify-center">
+                        <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                          <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
+                        </div>
+                        <p className=" text-xs font-bold">Tickets traités par point d'appel</p>
+                      </div>
+                      <div className="flex gap-3 justify-center my-2 px-2">
+                        {
+                          item?.serveAppointmentsBySubService.map(record => (
+                            <div key={record.name} className=" text-center">
+                              <p className=" text-xs font-semibold">{record.amount}</p>
+                              <div className=" flex items-center gap-1 mt-1">
+                                <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                                {item?.serveAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.receives) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                    <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+                      <div className=" flex items-center gap-2 justify-center">
+                        <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                          <RiLoader2Fill className=" text-red-600 w-3" />
+                        </div>
+                        <p className=" text-xs font-bold">Tickets en attente par point d'appel</p>
+                      </div>
+                      <div className="flex gap-3 justify-center my-2 px-2">
+                        {
+                          item?.waitingAppointmentsBySubService.map(record => (
+                            <div key={record.name} className=" text-center">
+                              <p className=" text-xs font-semibold">{record.amount}</p>
+                              <div className=" flex items-center gap-1 mt-1">
+                                <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                                {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {((record.amount / filterStats?.waitings) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                              </div>
+                            </div>
+                          ))
+                        }
+                      </div>
+                    </div>
+                    <div className=" w-fit h-20 p-4 px-2">
+                      <div className=" flex items-center gap-2 justify-center">
+                        <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                          <BsStickyFill className=" text-yellow-600 w-2" />
+                        </div>
+                        <p className=" text-xs font-bold">Total tickets par point d'appel</p>
+                      </div>
+                      <div className="flex gap-3 justify-center my-2 px-2">
+                        {item?.appointmentsBySubService.map(record => (
+                          <div key={record.name} className=" text-center">
+                            <p className=" text-xs font-semibold">{record.amount}</p>
+                            <div className=" flex items-center gap-1 mt-1">
+                              <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                              {filterStats?.appointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.appointments) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                            </div>
+                          </div>
+                        ))
+                        }
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          }
+        </div>
+      }
       <div className=" flex justify-center gap-12 mb-7">
         <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
@@ -1719,8 +1958,52 @@ const Home = () => {
         </div>
       </div>
 
-      <h3 className=" font-bold mt-2">Tickets traités</h3>
-      {filter == false && <div className=" w-full bg-white rounded-md p-4 my-4">
+      <h3 className=" font-bold my-4">Tickets traités</h3>
+      {
+        filterTwoDate === true && <div className=" h-screen pb-14 bg-white rounded overflow-hidden">
+          <h3 className=" text-center p-1">Répartition des tickets par date</h3>
+          <Bar
+            data={{
+              labels: filterStats?.appointmentsByDays.map(record => record.name), // Les noms de vos services
+              datasets: [
+                {
+                  label: 'Reçu',
+                  backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
+                  borderColor: 'rgba(0, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 0, 0, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.all), // Les données pour "Reçu" pour chaque service
+                },
+                {
+                  label: 'Traité',
+                  backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
+                  borderColor: 'rgba(0, 128, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 128, 0, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.receives), // Les données pour "Traité" pour chaque service
+                },
+                {
+                  label: 'En attente',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.waiting), // Les données pour "En attente" pour chaque service
+                },
+              ],
+            }}
+            width={100}
+            height={50}
+            options={{
+              maintainAspectRatio: false
+            }} // Utilisation des options typées
+          />
+        </div>
+      }
+      {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
         <Line data={{
           labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
           datasets: [
@@ -1745,7 +2028,33 @@ const Home = () => {
           ],
         }} />
 
-      </div>
+      </div> :
+        <div className=" w-full bg-white rounded-md p-4 my-4">
+          <Line data={{
+            labels: filterStats?.appointmentsByHourSlot.map(record => record.name),
+            datasets: [
+              {
+                label: 'Nombre de tickets pris',
+                data: filterStats.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
+                borderColor: 'rgba(0, 0, 0, 1)',
+                backgroundColor: 'rgba(0, 0, 0, 0.5)',
+              },
+              {
+                label: 'Nombre de tickets traités',
+                data: filterStats.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
+                borderColor: 'rgba(0, 255, 200, 1)',
+                backgroundColor: 'rgba(0, 255, 200, 0.5)',
+              },
+              {
+                label: 'Nombre de tickets en attente',
+                data: calculateWaitingAppointments(filterStats?.appointmentsByHourSlot, filterStats.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
+                borderColor: 'rgba(255, 0, 0, 1)',
+                backgroundColor: 'rgba(255, 0, 0, 0.5)'
+              },
+            ],
+          }} />
+
+        </div>
       }
       <div className=" mt-10">
         <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
@@ -1766,7 +2075,7 @@ const Home = () => {
             </tr>
           </thead>
           {
-            seeAll ? filter === false ? result.appointmentList?.map((appointment) => (
+            seeAll ? filter === false ? <> {result.appointmentList?.map((appointment) => (
               <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className='text-xs py-2 px-3 font-semibold'>
                   {appointment.date}
@@ -1787,7 +2096,7 @@ const Home = () => {
                   {appointment.Subservice.name}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.callTime}
+                  {appointment.callTime !== null ? appointment.callTime : "En attente"}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
@@ -1803,7 +2112,44 @@ const Home = () => {
                 </td>
 
               </tr>
-            )) :
+            ))}
+              <tr className="bg-green-600 text-white">
+                <td className='text-xs py-2 px-3 font-semibold'>
+                  Total
+                </td>
+                <td className=' text-xs '>
+
+                </td>
+                <td className=' text-xs '>
+                  {result.appointments}
+                </td>
+                <td className=' text-xs '>
+                  {result.appointments}
+                </td>
+                <td className=' text-xs '>
+                  {result.services}
+                </td>
+                <td className=' text-xs '>
+                  {result.subServices}
+                </td>
+                <td className=' text-xs '>
+
+                </td>
+                <td className=' text-xs '>
+                  {result.appointmentList?.length > 0 && format(result.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs '>
+                  {result.appointmentList?.length > 0 && format(result.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs '>
+                  {result.appointmentList.filter(element => element.transfered).length}
+                </td>
+                <td className=' text-xs '>
+                  {result.appointmentList.filter(element => element.missing).length}
+                </td>
+              </tr>
+            </>
+              :
               <>
                 {filterStats.appointmentList?.map((appointment) => (
                   <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
@@ -1826,7 +2172,7 @@ const Home = () => {
                       {appointment.Subservice.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.callTime}
+                      {appointment.callTime !== null ? appointment.callTime : "En attente"}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
@@ -1843,38 +2189,38 @@ const Home = () => {
 
                   </tr>
                 ))}
-                <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <tr className="bg-green-600 text-white">
                   <td className='text-xs py-2 px-3 font-semibold'>
                     Total
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
 
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.appointments}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.appointments}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.services}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.subServices}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
 
                   </td>
-                  <td className=' text-xs opacity-60'>
-                    {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                  <td className=' text-xs '>
+                    {filterStats.appointmentList?.length > 0 && format(filterStats.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
                   </td>
-                  <td className=' text-xs opacity-60'>
-                    {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                  <td className=' text-xs '>
+                    {filterStats.appointmentList?.length > 0 && format(filterStats.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.appointmentList.filter(element => element.transfered).length}
                   </td>
-                  <td className=' text-xs opacity-60'>
+                  <td className=' text-xs '>
                     {filterStats.appointmentList.filter(element => element.missing).length}
                   </td>
                 </tr>
@@ -1904,7 +2250,7 @@ const Home = () => {
                             {appointment.Subservice.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.callTime}
+                            {appointment.callTime !== null ? appointment.callTime : "En attente"}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
@@ -1923,38 +2269,38 @@ const Home = () => {
                     }
                   })
                   }
-                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <tr className="bg-green-600 text-white">
                     <td className='text-xs py-2 px-3 font-semibold'>
                       Total
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
 
                     </td>
-                    <td className=' text-xs opacity-60'>
-                      {filterStats.appointments}
-                    </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {result.appointments}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
+                      {result.appointments}
+                    </td>
+                    <td className=' text-xs'>
                       {result.services}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {result.subServices}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
 
                     </td>
-                    <td className=' text-xs opacity-60'>
-                      {result.appointmentList?.length > 0 && format((result.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / result.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                    <td className=' text-xs'>
+                      {result.appointmentList?.length > 0 && format(result.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
-                    <td className=' text-xs opacity-60'>
-                      {result.appointmentList?.length > 0 && format((result.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / result.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                    <td className=' text-xs'>
+                      {result.appointmentList?.length > 0 && format(result.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {result.appointmentList.filter(element => element.transfered).length}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {result.appointmentList.filter(element => element.missing).length}
                     </td>
                   </tr>
@@ -2001,38 +2347,38 @@ const Home = () => {
                       );
                     }
                   })}
-                  <tr className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <tr className="bg-green-600 text-white ">
                     <td className='text-xs py-2 px-3 font-semibold'>
                       Total
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
 
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.appointments}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.appointments}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.services}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.subServices}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
 
                     </td>
-                    <td className=' text-xs opacity-60'>
-                      {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.waitingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                    <td className=' text-xs'>
+                      {filterStats.appointmentList?.length > 0 && format(filterStats.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
-                    <td className=' text-xs opacity-60'>
-                      {filterStats.appointmentList?.length > 0 && format((filterStats.appointmentList?.reduce((acc, current) => acc + current.processingTime, 0) / filterStats.appointmentList.length) * 60 * 1000, 'HH:mm:ss')}
+                    <td className=' text-xs'>
+                      {filterStats.appointmentList?.length > 0 && format(filterStats.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.appointmentList.filter(element => element.transfered).length}
                     </td>
-                    <td className=' text-xs opacity-60'>
+                    <td className=' text-xs'>
                       {filterStats.appointmentList.filter(element => element.missing).length}
                     </td>
                   </tr>
@@ -2045,6 +2391,63 @@ const Home = () => {
           : null
         }
       </div>
+      {
+        showTotal && <div className=" mt-10">
+          <h3 className=" font-bold my-4">Comparatif des agences</h3>
+          <table className="w-full table-fixed">
+            <thead>
+              <tr className=" bg-black">
+                <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Agence</th>
+                <th className="w-1/5 py-4 text-left text-white text-xs font-semibold">Service</th>
+                <th className="w-1/5 py-4 text-left text-white text-xs font-semibold">Point d&apos;appel</th>
+                <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Nombre Tickets</th>
+                <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Tickets Traités</th>
+                <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Tickets En Attente</th>
+                <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Tickets Transférés</th>
+                <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Tickets Sautés</th>
+                <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Attente Moyen</th>
+                <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Ttraitement Moyen</th>
+
+              </tr>
+            </thead>
+            {
+              filterStats.totalByOffices?.map((appointment) => (
+                <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <td className='text-xs py-2 px-1 font-semibold'>
+                    {appointment.name}
+                  </td>
+                  <td className='text-xs opacity-60'>
+                    {appointment.services}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.subservices}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.receives}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.serves}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.waitings}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.transfers}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {appointment.missing}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {format(appointment.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                  </td>
+                  <td className=' text-xs opacity-60'>
+                    {format(appointment.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+                  </td>
+                </tr>
+              ))}
+          </table>
+        </div>
+      }
     </div>
   )
 }

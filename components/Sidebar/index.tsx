@@ -21,6 +21,11 @@ const rootItems = [
         icon: TbReportAnalytics
     },
     {
+        label: "Configuration",
+        href: "/home/time",
+        icon: MdTimer
+    },
+    {
         label: "Agences",
         href: "/home/offices",
         icon: PiBuildingsFill

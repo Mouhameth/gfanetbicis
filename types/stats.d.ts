@@ -35,9 +35,38 @@ interface Stats {
     totatlNotInServingBySubService: Record[];
     appointmentsByHourSlot: Record[];
     serveAppointmentsByHourSlot: Record[];
+    appointmentsByDays: DayRecord[];
+    appointmentsBySubServiceByDays: DaysRecord[];
+    totalByOffices: TotalRecord[]
 }
 
 interface Record {
     name: string;
     amount: number;
+}
+
+interface DayRecord {
+    name: string;
+    all: number;
+    receives: number;
+    waiting: number;
+}
+
+interface DaysRecord {
+    date: string;
+    appointmentsBySubService: Record[];
+    serveAppointmentsBySubService: Record[];
+    waitingAppointmentsBySubService: Record[];
+}
+interface TotalRecord {
+    name: string;
+    receives: number;
+    waitings: number;
+    serves: number;
+    transfers: number;
+    missing: number;
+    services: number;
+    subservices: number;
+    meanWaitingTime: number;
+    meanServingTime: number;
 }
