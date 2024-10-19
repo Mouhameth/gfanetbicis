@@ -1599,7 +1599,7 @@ const Home = () => {
               <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
               </div>
-              <p className=" text-xs font-bold">Tickets traités par point d'appel</p>
+              <p className=" text-xs font-bold">Tickets traités par point d&apos;appel</p>
             </div>
             <div className="flex gap-3 justify-center my-2 px-2">
               {
@@ -1629,7 +1629,7 @@ const Home = () => {
               <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <RiLoader2Fill className=" text-red-600 w-3" />
               </div>
-              <p className=" text-xs font-bold">Tickets en attente par point d'appel</p>
+              <p className=" text-xs font-bold">Tickets en attente par point d&apos;appel</p>
             </div>
             <div className="flex gap-3 justify-center my-2 px-2">
               {filter === false ? result?.waitingAppointmentsBySubService.map(record => (
@@ -1659,7 +1659,7 @@ const Home = () => {
               <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <BsStickyFill className=" text-yellow-600 w-2" />
               </div>
-              <p className=" text-xs font-bold">Total tickets par point d'appel</p>
+              <p className=" text-xs font-bold">Total tickets par point d&apos;appel</p>
             </div>
             <div className="flex gap-3 justify-center my-2 px-2">
               {filter === false ? result?.appointmentsBySubService.map(record => (
@@ -1689,7 +1689,7 @@ const Home = () => {
         filterTwoDate === true && <div>
           {
             filterStats.appointmentsBySubServiceByDays.map(item =>
-              <div>
+              <div key={item.date} >
                 <p className=" bg-white p-2 rounded-md mt-4 w-fit text-xs font-bold mx-auto">{item.date}</p>
                 <div className=" flex justify-center mb-8">
                   <div className=" w-4 bg-black">
@@ -1700,7 +1700,7 @@ const Home = () => {
                         <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
                         </div>
-                        <p className=" text-xs font-bold">Tickets traités par point d'appel</p>
+                        <p className=" text-xs font-bold">Tickets traités par point d&apos;appel</p>
                       </div>
                       <div className="flex gap-3 justify-center my-2 px-2">
                         {
@@ -1721,7 +1721,7 @@ const Home = () => {
                         <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <RiLoader2Fill className=" text-red-600 w-3" />
                         </div>
-                        <p className=" text-xs font-bold">Tickets en attente par point d'appel</p>
+                        <p className=" text-xs font-bold">Tickets en attente par point d&apos;appel</p>
                       </div>
                       <div className="flex gap-3 justify-center my-2 px-2">
                         {
@@ -1742,7 +1742,7 @@ const Home = () => {
                         <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <BsStickyFill className=" text-yellow-600 w-2" />
                         </div>
-                        <p className=" text-xs font-bold">Total tickets par point d'appel</p>
+                        <p className=" text-xs font-bold">Total tickets par point d&apos;appel</p>
                       </div>
                       <div className="flex gap-3 justify-center my-2 px-2">
                         {item?.appointmentsBySubService.map(record => (
