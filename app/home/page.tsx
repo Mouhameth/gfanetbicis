@@ -224,10 +224,8 @@ const Home = () => {
         const pickedTime = `${hours}:${minutes}:${seconds}`;
         setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
 
-        const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: selectedOffices.length == 1 ? [officeId] : selectedOffices }));
+        const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: selectedOffices }));
         if (res.status == 200) {
-          console.log(res.data);
-
           setFilterStats(res.data);
         }
       } catch (error) {
@@ -284,7 +282,6 @@ const Home = () => {
         ? prevSelected.filter(id => id !== officeId)
         : [...prevSelected, officeId]
     );
-    console.log(selectedOffices);
 
   };
 
@@ -303,7 +300,6 @@ const Home = () => {
       if (res.status == 200) {
         setFilterStats(res.data);
       }
-      console.log(res);
 
     } catch (error) {
       setFilter(false);
