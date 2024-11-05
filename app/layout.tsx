@@ -7,8 +7,8 @@ import { Toaster } from "react-hot-toast";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "GPass",
-  description: "Qmapbackoffice app",
+  title: "Gfanet",
+  description: "Gfanet app",
   icons: {
     icon: '/favicon.ico'
   },
