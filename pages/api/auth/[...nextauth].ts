@@ -26,6 +26,7 @@ export default NextAuth({
             },
             body: JSON.stringify({username, password})
           });
+          console.log(res);
           
           const user = await res.json();
           

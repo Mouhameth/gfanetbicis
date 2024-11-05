@@ -7,8 +7,8 @@ const SidebarLogo = () => {
 
   return (
     <div className="
-    h-24
-    w-24
+    h-40
+    w-40
     p-4
     mx-auto
     cursor-pointer
