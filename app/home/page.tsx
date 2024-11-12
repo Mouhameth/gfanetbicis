@@ -1308,7 +1308,7 @@ const Home = () => {
           </div>
           <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
             <div>
-              <p className=" text-xs opacity-60 text-center pb-1 text-red-500">
+              <p className=" text-xs opacity-60 text-center pb-1 ">
                 Attente optimale
               </p>
               <div className=" flex justify-between px-2">
@@ -1350,7 +1350,7 @@ const Home = () => {
           </div>
           <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
             <div>
-              <p className=" text-xs opacity-60 text-center pb-1 text-green-500">
+              <p className=" text-xs opacity-60 text-center pb-1">
                 Traitement optimal
               </p>
               <div className=" flex justify-between px-2">
@@ -1400,7 +1400,7 @@ const Home = () => {
           <button onClick={() => exportMeanTimeDataToToExcel('waitingTimeByService', 'Temps moyen d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeByService : result.meanWaitingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
-          <p className=" text-center">Attente moyeene</p>
+          <p className=" text-center">Attente moyenne</p>
           <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
@@ -1500,14 +1500,14 @@ const Home = () => {
                   result?.totatlInWaitingByService.map(record => (
                     <div key={record.name} className=" text-center">
                       <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
                   :
                   filterStats?.totatlInWaitingByService.map(record => (
                     <div key={record.name} className=" text-center">
                       <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -1523,14 +1523,14 @@ const Home = () => {
                 filter === false ?
                   result?.totatlNotInWaitingByService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   )) :
                   filterStats?.totatlNotInWaitingByService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -1546,14 +1546,14 @@ const Home = () => {
                 result?.totatlInServingByService.map(record => (
                   <div key={record.name} className=" text-center">
                     <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                    <p className=" text-xs">{record.name}</p>
+                    <p className=" text-xs font-semibold">{record.name}</p>
                   </div>
                 ))
                 :
                 filterStats?.totatlInServingByService.map(record => (
                   <div key={record.name} className=" text-center">
                     <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                    <p className=" text-xs">{record.name}</p>
+                    <p className=" text-xs font-semibold">{record.name}</p>
                   </div>
                 ))
               }
@@ -1569,15 +1569,15 @@ const Home = () => {
                 filter === false ?
                   result?.totatlNotInServingByService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
                   :
                   filterStats?.totatlNotInServingByService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -1866,14 +1866,14 @@ const Home = () => {
                 result?.totatlInWaitingBySubService.map(record => (
                   <div key={record.name} className=" text-center">
                     <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                    <p className=" text-xs">{record.name}</p>
+                    <p className=" text-xs font-semibold">{record.name}</p>
                   </div>
                 ))
                 :
                 filterStats?.totatlInWaitingBySubService.map(record => (
                   <div key={record.name} className=" text-center">
                     <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                    <p className=" text-xs">{record.name}</p>
+                    <p className=" text-xs font-semibold">{record.name}</p>
                   </div>
                 ))
               }
@@ -1889,15 +1889,15 @@ const Home = () => {
                 filter === false ?
                   result?.totatlNotInWaitingBySubService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
                   :
                   filterStats?.totatlNotInWaitingBySubService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -1914,14 +1914,14 @@ const Home = () => {
                   result?.totatlInServingBySubService.map(record => (
                     <div key={record.name} className=" text-center">
                       <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
                   :
                   filterStats?.totatlInServingBySubService.map(record => (
                     <div key={record.name} className=" text-center">
                       <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -1937,15 +1937,15 @@ const Home = () => {
                 filter === false ?
                   result?.totatlNotInServingBySubService.map((record: { amount: number; name: string }) => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
                   :
                   filterStats?.totatlNotInServingBySubService.map(record => (
                     <div key={record.name} className=" text-center">
-                      <p className=" text-xs font-semibold">{Math.ceil(record.amount)}</p>
-                      <p className=" text-xs">{record.name}</p>
+                      <p className=" text-xs font-semibold text-red-500">{Math.ceil(record.amount)}</p>
+                      <p className=" text-xs font-semibold">{record.name}</p>
                     </div>
                   ))
               }
@@ -2052,7 +2052,7 @@ const Home = () => {
 
         </div>
       }
-      <h3 className=" font-bold my-6">4-Tableau détaillé du flux des clients</h3>
+      <h3 className=" font-bold my-6">5-Tableau détaillé du flux des clients</h3>
       <div className=" ">
         <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
         <table className="w-full table-fixed">
@@ -2093,7 +2093,7 @@ const Home = () => {
                   {appointment.Subservice.name}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.callTime !== null ? appointment.callTime : "En attente"}
+                  {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2169,7 +2169,7 @@ const Home = () => {
                       {appointment.Subservice.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.callTime !== null ? appointment.callTime : "En attente"}
+                      {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2247,7 +2247,7 @@ const Home = () => {
                             {appointment.Subservice.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.callTime !== null ? appointment.callTime : "En attente"}
+                            {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
