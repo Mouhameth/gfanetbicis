@@ -1585,7 +1585,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <h3 className=" font-bold my-4">3-Analyse par rapport aux point d&apos;appel</h3>
+      <h3 className=" font-bold my-4">3-Analyse par rapport aux points d&apos;appel</h3>
       <div className=" flex justify-center my-8">
         <div className=" w-4 bg-black">
         </div>
