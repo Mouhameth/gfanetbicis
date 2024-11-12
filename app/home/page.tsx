@@ -1813,7 +1813,7 @@ const Home = () => {
       <div className=" mt-8 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
           <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <h3 className=" text-center p-1">Visualisation de l'affluence point d&apos;appel</h3>
+          <h3 className=" text-center p-1">Visualisation de l&apos;affluence point d&apos;appel</h3>
           <Bar
             data={{
               labels: filter === false ? result?.appointmentsBySubService.map(record => record.name) : filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
