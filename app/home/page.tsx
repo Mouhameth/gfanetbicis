@@ -59,7 +59,7 @@ const Home = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [officeName, setOfficeName] = useState('');
   useEffect(() => {
-    useChangeTitle.onChanged("Rapport global");
+    useChangeTitle.onChanged("Rapport global du flux des clients en agence");
     const date = new Date(new Date().getTime());
     const hours = String(date.getUTCHours()).padStart(2, '0');
     const minutes = String(date.getUTCMinutes()).padStart(2, '0');
@@ -1195,7 +1195,7 @@ const Home = () => {
         <FaRegCalendar />
         <p className=" text-xs font-bold">{currentDate}</p>
       </div>
-      <h3 className=" font-bold">Globale</h3>
+      <h3 className=" font-bold">1-Synthèse</h3>
       <div className=" flex justify-center mt-12">
         <div className=" w-4 bg-black">
         </div>
@@ -1236,7 +1236,7 @@ const Home = () => {
               </h2>
               <div className=" flex items-center gap-2">
                 <p className=" text-xs opacity-60">
-                  Tickets traités
+                  Clients traités
                 </p>
                 <p className=" text-xs text-green-500 font-semibold">
                   {filter === false ? `${result?.receives ? `${((result?.receives / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.receives ? `${((filterStats?.receives / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
@@ -1254,7 +1254,7 @@ const Home = () => {
               </h2>
               <div className=" flex items-center gap-2">
                 <p className=" text-xs opacity-60">
-                  Tickets en attente
+                  Clients en attente
                 </p>
                 <p className=" text-xs text-red-500 font-semibold">
                   {filter === false ? `${result?.waitings ? `${((result?.waitings / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.waitings ? `${((filterStats?.waitings / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
@@ -1271,7 +1271,7 @@ const Home = () => {
                 {filter === false ? result?.appointments : filterStats.appointments}
               </h2>
               <p className=" text-xs opacity-60">
-                Total tickets
+                Clients totalisé
               </p>
             </div>
           </div>
@@ -1289,7 +1289,7 @@ const Home = () => {
                 {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
-                Temps moyen d&rsquo;attente
+                Attente moyenne
               </p>
             </div>
           </div>
@@ -1302,14 +1302,14 @@ const Home = () => {
                 {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
-                Temps moyen de traitement
+                Traitement moyen
               </p>
             </div>
           </div>
           <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
             <div>
-              <p className=" text-xs opacity-60 text-center pb-1">
-                Temps optimal d&rsquo;attente
+              <p className=" text-xs opacity-60 text-center pb-1 text-red-500">
+                Attente optimale
               </p>
               <div className=" flex justify-between px-2">
                 <div className=" text-center">
@@ -1350,8 +1350,8 @@ const Home = () => {
           </div>
           <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
             <div>
-              <p className=" text-xs opacity-60 text-center pb-1">
-                Temps optimal de traitement
+              <p className=" text-xs opacity-60 text-center pb-1 text-green-500">
+                Traitement optimal
               </p>
               <div className=" flex justify-between px-2">
                 <div className=" text-center">
@@ -1394,13 +1394,13 @@ const Home = () => {
         <div className=" w-4 bg-black h-20">
         </div>
       </div>
-      <h3 className=" font-bold mb-4">Services</h3>
+      <h3 className=" font-bold mb-4">2-Analyse par rapport aux services</h3>
       <div className=" flex justify-center gap-12 mb-7">
         <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel('waitingTimeByService', 'Temps moyen d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeByService : result.meanWaitingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
-          <p className=" text-center">Temps moyen d&rsquo;attente</p>
+          <p className=" text-center">Attente moyeene</p>
           <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
@@ -1423,7 +1423,7 @@ const Home = () => {
           <button onClick={() => exportMeanTimeDataToToExcel("meanServingTime", '', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeByService : result.meanServingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
-          <p className=" text-center">Temps moyen de traitement</p>
+          <p className=" text-center">Traitement moyen</p>
           <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
@@ -1447,7 +1447,7 @@ const Home = () => {
       <div className=" mt-2 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
           <button onClick={() => exportTicketsDataToExcel("allTicketsByService", "Nombre de tickets par Servic", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <h3 className=" text-center p-1">Tickets par Service</h3>
+          <h3 className=" text-center p-1">Visualisation de l&lsquo;affluence par service</h3>
           <Bar
             data={{
               labels: filter === false ? result?.appointmentsByService.map(record => record.name) : filterStats?.appointmentsByService.map(record => record.name), // Les noms de vos services
@@ -1493,7 +1493,7 @@ const Home = () => {
             <button onClick={() => exportParticularDataToToExcel("inOptimalWaitingTimeByService", 'Le nombre de ticket dans le temps optimal d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingByService : result.totatlInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets dans le temps optimal d&lsquo;attente</p>
+            <p className=" text-center">Attente optimale</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1517,7 +1517,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptimalWaitingTimeByService", "Le nombre de ticket en dehors du temps optimal d'attente par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingByService : result.totatlNotInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets en dehors du temps optimal d&lsquo;attente</p>
+            <p className=" text-center">Attente non optimale</p>
             <div className="flex gap-4 justify-center my-2 px-2">
               {
                 filter === false ?
@@ -1540,7 +1540,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1">
             <button onClick={() => exportParticularDataToToExcel("inOptimalServingTimeByService", "Le nombre de ticket dans le temps optimal de traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingByService : result.totatlInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets dans le temps optimal de traitement</p>
+            <p className=" text-center">Traitement optimal</p>
             <div className="flex gap-4 justify-center my-2 px-2">
               {filter === false ?
                 result?.totatlInServingByService.map(record => (
@@ -1563,7 +1563,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptimalServingTimeByService", "Le nombre de ticket en dehors du temps optimal traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingByService : result.totatlNotInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets en dehors du temps optimal traitement</p>
+            <p className=" text-center">Traitement non optimal</p>
             <div className="flex gap-4 justify-center my-2 px-2">
               {
                 filter === false ?
@@ -1585,19 +1585,19 @@ const Home = () => {
           </div>
         </div>
       </div>
-      <h3 className=" font-bold my-4">Point d&apos;appel</h3>
+      <h3 className=" font-bold my-4">3-Analyse par rapport aux point d&apos;appel</h3>
       <div className=" flex justify-center my-8">
         <div className=" w-4 bg-black">
         </div>
-        <div className="flex bg-white rounded-sm justify-between items-center ">
-          <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+        <div className="flex bg-white rounded-sm justify-between items-center">
+          <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
             <div className=" flex items-center gap-2 justify-center">
               <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
               </div>
-              <p className=" text-xs font-bold">Tickets traités par point d&apos;appel</p>
+              <p className=" text-xs font-bold">Clients traités</p>
             </div>
-            <div className="flex gap-3 justify-center my-2 px-2">
+            <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
               {
                 filter === false ? result?.serveAppointmentsBySubService.map(record => (
                   <div key={record.name} className=" text-center">
@@ -1620,14 +1620,14 @@ const Home = () => {
               }
             </div>
           </div>
-          <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+          <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
             <div className=" flex items-center gap-2 justify-center">
               <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <RiLoader2Fill className=" text-red-600 w-3" />
               </div>
-              <p className=" text-xs font-bold">Tickets en attente par point d&apos;appel</p>
+              <p className=" text-xs font-bold">Clients en attente</p>
             </div>
-            <div className="flex gap-3 justify-center my-2 px-2">
+            <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
               {filter === false ? result?.waitingAppointmentsBySubService.map(record => (
                 <div key={record.name} className=" text-center">
                   <p className=" text-xs font-semibold">{record.amount}</p>
@@ -1642,7 +1642,7 @@ const Home = () => {
                   <div key={record.name} className=" text-center">
                     <p className=" text-xs font-semibold">{record.amount}</p>
                     <div className=" flex items-center gap-1 mt-1">
-                      <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
+                      <p className=" text-xs capitalize">{record.name}</p>
                       {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {filterStats?.waitings > 0? ((record.amount / filterStats?.waitings) * 100).toFixed(): 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
                     </div>
                   </div>
@@ -1650,14 +1650,14 @@ const Home = () => {
               }
             </div>
           </div>
-          <div className=" w-fit h-20 p-4 px-2">
+          <div className=" w-fit h-fit p-4 px-2">
             <div className=" flex items-center gap-2 justify-center">
               <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
                 <BsStickyFill className=" text-yellow-600 w-2" />
               </div>
-              <p className=" text-xs font-bold">Total tickets par point d&apos;appel</p>
+              <p className=" text-xs font-bold">Clients totalisés</p>
             </div>
-            <div className="flex gap-3 justify-center my-2 px-2">
+            <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
               {filter === false ? result?.appointmentsBySubService.map(record => (
                 <div key={record.name} className=" text-center">
                   <p className=" text-xs font-semibold">{record.amount}</p>
@@ -1691,14 +1691,14 @@ const Home = () => {
                   <div className=" w-4 bg-black">
                   </div>
                   <div className="flex bg-white rounded-sm justify-between items-center ">
-                    <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+                    <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
                       <div className=" flex items-center gap-2 justify-center">
                         <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
                         </div>
-                        <p className=" text-xs font-bold">Tickets traités par point d&apos;appel</p>
+                        <p className=" text-xs font-bold">Clients traités</p>
                       </div>
-                      <div className="flex gap-3 justify-center my-2 px-2">
+                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
                         {
                           item?.serveAppointmentsBySubService.map(record => (
                             <div key={record.name} className=" text-center">
@@ -1712,14 +1712,14 @@ const Home = () => {
                         }
                       </div>
                     </div>
-                    <div className=" w-fit h-20 py-4 border-r-[1px] px-2">
+                    <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
                       <div className=" flex items-center gap-2 justify-center">
                         <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <RiLoader2Fill className=" text-red-600 w-3" />
                         </div>
-                        <p className=" text-xs font-bold">Tickets en attente par point d&apos;appel</p>
+                        <p className=" text-xs font-bold">Clients en attente</p>
                       </div>
-                      <div className="flex gap-3 justify-center my-2 px-2">
+                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
                         {
                           item?.waitingAppointmentsBySubService.map(record => (
                             <div key={record.name} className=" text-center">
@@ -1733,14 +1733,14 @@ const Home = () => {
                         }
                       </div>
                     </div>
-                    <div className=" w-fit h-20 p-4 px-2">
+                    <div className=" w-fit h-fit p-4 px-2">
                       <div className=" flex items-center gap-2 justify-center">
                         <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
                           <BsStickyFill className=" text-yellow-600 w-2" />
                         </div>
-                        <p className=" text-xs font-bold">Total tickets par point d&apos;appel</p>
+                        <p className=" text-xs font-bold">Clients totalisés</p>
                       </div>
-                      <div className="flex gap-3 justify-center my-2 px-2">
+                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
                         {item?.appointmentsBySubService.map(record => (
                           <div key={record.name} className=" text-center">
                             <p className=" text-xs font-semibold">{record.amount}</p>
@@ -1765,7 +1765,7 @@ const Home = () => {
           <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
-          <p className=" text-center">Temps moyen d&apos;attente</p>
+          <p className=" text-center">Attente moyenne</p>
           <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
@@ -1789,7 +1789,7 @@ const Home = () => {
           <button onClick={() => exportMeanTimeDataToToExcel("meanPTimeByService", "Temps moyen de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeBySubService : result.meanServingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
-          <p className=" text-center">Temps moyen de traitement</p>
+          <p className=" text-center">Traitement moyen </p>
           <div className="flex gap-4 justify-center my-2 px-2">
             {
               filter === false ?
@@ -1813,7 +1813,7 @@ const Home = () => {
       <div className=" mt-8 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
           <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <h3 className=" text-center p-1">Tickets par Point d&apos;appel</h3>
+          <h3 className=" text-center p-1">Visualisation de l'affluence point d&apos;appel</h3>
           <Bar
             data={{
               labels: filter === false ? result?.appointmentsBySubService.map(record => record.name) : filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
@@ -1860,7 +1860,7 @@ const Home = () => {
             <button onClick={() => exportParticularDataToToExcel("inOptWTimeBySubService", "Le nombre de ticket dans le temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingBySubService : result.totatlInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets dans le temps optimal d&apos;attente</p>
+            <p className=" text-center">Attente optimale</p>
             <div className="flex gap-4 justify-center my-2 px-2">
               {filter === false ?
                 result?.totatlInWaitingBySubService.map(record => (
@@ -1883,7 +1883,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptWTimeBySubService", "Le nombre de ticket en dehors du temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingBySubService : result.totatlNotInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets en dehors du temps optimal d&apos;attente</p>
+            <p className=" text-center">Attente non optimale</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1907,7 +1907,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1">
             <button onClick={() => exportParticularDataToToExcel("inOptSTimeBySubService", "Le nombre de ticket dans le temps optimal de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingBySubService : result.totatlInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets dans le temps optimal de traitement</p>
+            <p className=" text-center">Traitement optimal</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1931,7 +1931,7 @@ const Home = () => {
           <div className=" bg-white rounded pb-1 my-7">
             <button onClick={() => exportParticularDataToToExcel("notInOptSTimeBySubService", "Le nombre de ticket en dehors du temps optimal traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingBySubService : result.totatlNotInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             <hr className=" w-8 mx-auto my-3" />
-            <p className=" text-center">Tickets en dehors du temps optimal traitement</p>
+            <p className=" text-center">Traitement non optimal</p>
             <div className="flex gap-4 justify-center my-2">
               {
                 filter === false ?
@@ -1954,7 +1954,7 @@ const Home = () => {
         </div>
       </div>
 
-      <h3 className=" font-bold my-4">Tickets traités</h3>
+      <h3 className=" font-bold my-4">4-Visualisation linaire du flux des clients</h3>
       {
         filterTwoDate === true && <div className=" h-screen pb-14 bg-white rounded overflow-hidden">
           <h3 className=" text-center p-1">Répartition des tickets par date</h3>
@@ -1963,7 +1963,7 @@ const Home = () => {
               labels: filterStats?.appointmentsByDays.map(record => record.name), // Les noms de vos services
               datasets: [
                 {
-                  label: 'Reçu',
+                  label: 'Nombre de clients',
                   backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
                   borderColor: 'rgba(0, 0, 0, 1)',
                   borderWidth: 1,
@@ -1972,7 +1972,7 @@ const Home = () => {
                   data: filterStats?.appointmentsByDays.map(record => record.all), // Les données pour "Reçu" pour chaque service
                 },
                 {
-                  label: 'Traité',
+                  label: 'Clients traités',
                   backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
                   borderColor: 'rgba(0, 128, 0, 1)',
                   borderWidth: 1,
@@ -1981,7 +1981,7 @@ const Home = () => {
                   data: filterStats?.appointmentsByDays.map(record => record.receives), // Les données pour "Traité" pour chaque service
                 },
                 {
-                  label: 'En attente',
+                  label: 'Clients en attente',
                   backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
                   borderColor: 'rgba(255, 0, 0, 1)',
                   borderWidth: 1,
@@ -2004,19 +2004,19 @@ const Home = () => {
           labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
           datasets: [
             {
-              label: 'Nombre de tickets pris',
+              label: 'Nombre de clients',
               data: result.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
               borderColor: 'rgba(0, 0, 0, 1)',
               backgroundColor: 'rgba(0, 0, 0, 0.5)',
             },
             {
-              label: 'Nombre de tickets traités',
+              label: 'Clients traités',
               data: result.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
               borderColor: 'rgba(0, 255, 200, 1)',
               backgroundColor: 'rgba(0, 255, 200, 0.5)',
             },
             {
-              label: 'Nombre de tickets en attente',
+              label: 'Clients en attente',
               data: calculateWaitingAppointments(result?.appointmentsByHourSlot, result.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
               borderColor: 'rgba(255, 0, 0, 1)',
               backgroundColor: 'rgba(255, 0, 0, 0.5)',
@@ -2030,19 +2030,19 @@ const Home = () => {
             labels: filterStats?.appointmentsByHourSlot.map(record => record.name),
             datasets: [
               {
-                label: 'Nombre de tickets pris',
+                label: 'Nombre de clients',
                 data: filterStats.appointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
                 borderColor: 'rgba(0, 0, 0, 1)',
                 backgroundColor: 'rgba(0, 0, 0, 0.5)',
               },
               {
-                label: 'Nombre de tickets traités',
+                label: 'Clients traités',
                 data: filterStats.serveAppointmentsByHourSlot.map(record => record.amount), // Exemple de données pour le nombre traité
                 borderColor: 'rgba(0, 255, 200, 1)',
                 backgroundColor: 'rgba(0, 255, 200, 0.5)',
               },
               {
-                label: 'Nombre de tickets en attente',
+                label: 'Clients en attente',
                 data: calculateWaitingAppointments(filterStats?.appointmentsByHourSlot, filterStats.serveAppointmentsByHourSlot), // Exemple de données pour le nombre en attente
                 borderColor: 'rgba(255, 0, 0, 1)',
                 backgroundColor: 'rgba(255, 0, 0, 0.5)'
@@ -2052,7 +2052,8 @@ const Home = () => {
 
         </div>
       }
-      <div className=" mt-10">
+      <h3 className=" font-bold my-6">4-Tableau détaillé du flux des clients</h3>
+      <div className=" ">
         <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
         <table className="w-full table-fixed">
           <thead>

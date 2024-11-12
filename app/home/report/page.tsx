@@ -416,7 +416,7 @@ const Report = () => {
                 <FaRegCalendar />
                 <p className=" text-xs font-bold">{currentDate}</p>
             </div>
-            <h3 className=" font-bold">Globale</h3>
+            <h3 className=" font-bold">1-Synthèse</h3>
             <div className=" flex justify-center mt-6">
                 <div className=" w-4 bg-black">
                 </div>
@@ -475,7 +475,7 @@ const Report = () => {
                     </div>
                 </div>
             </div>
-            <h3 className=" font-bold mt-8">Répartition des Tickets par Site</h3>
+            <h3 className=" font-bold mt-8">2-Visualisation du flux des clients par Site</h3>
             {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
                 <Line data={{
                     labels: result?.appointmentsByOffice.map(record => record.name),
@@ -528,7 +528,7 @@ const Report = () => {
                     }} />
                 </div>
             }
-            <h3 className=" font-bold mt-8">Le pourcentage des Tickets reçu par Site</h3>
+            <h3 className=" font-bold mt-8">3-Pourcentage des clients par Site</h3>
             {
                 filter == false ?
                     <div className="w-full h-1/3 flex justify-center bg-white rounded-md p-4 my-4">
