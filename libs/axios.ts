@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const BASE_URL = "http://localhost:8080/remote/v1/api";
+const BASE_URL = "https://bicis-360633557660.us-central1.run.app/remote/v1/api";
 
 export default axios.create({
     baseURL: BASE_URL,
