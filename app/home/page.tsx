@@ -19,7 +19,7 @@ import XLSX from 'sheetjs-style';
 import { useEffect, useState } from "react";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
 import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
-import { FaClipboardList, FaRegCalendar } from "react-icons/fa";
+import { FaClipboardList, FaFilter, FaRegCalendar } from "react-icons/fa";
 import { BsStickyFill } from "react-icons/bs";
 import { CiFilter } from "react-icons/ci";
 import { Menu, MenuItem, Checkbox, Button, ListItemText } from "@mui/material";
@@ -121,10 +121,13 @@ const Home = () => {
   const [showTotal, setShowTotal] = useState(false);
   const [filterTwoDate, setFilterTwoDate] = useState(false);
   const [description, setDescription] = useState('');
+  const [filterAsc, setFilterAsc] = useState(false);
   const [anchorOfficeElFilter, setAnchorOfficeElFilter] = useState(null);
   const openOfficeMenuFilter = Boolean(anchorOfficeElFilter);
   const [anchorWeekElFilter, setAnchorWeekElFilter] = useState(null);
   const openWeekMenuFilter = Boolean(anchorWeekElFilter);
+  let emptyAppointments: Appointment[] = [];
+  const [filterAppointments, setFilterAppointments] = useState(emptyAppointments);
 
   const [anchorMonthElFilter, setAnchorMonthElFilter] = useState(null);
   const openMonthMenuFilter = Boolean(anchorMonthElFilter);
@@ -174,6 +177,8 @@ const Home = () => {
 
       const res = await axiosAuth.post<Stats>(url, JSON.stringify({ date: date, ids: selectedOffices.length === 0 ? [officeId] : selectedOffices }));
       if (res.status == 200) {
+        console.log(res.data);
+
         setFilterStats(res.data);
       }
     } catch (error) {
@@ -337,6 +342,22 @@ const Home = () => {
       setFormattedEndDate(format(end, 'dd/MM/yyyy'));
     }
 
+  };
+
+  const handleReverse = () => {
+    setFilterAsc(true)
+    if (filter) {
+      const copiedArray = filterStats.appointmentList.slice();
+      setFilterAppointments(copiedArray.reverse())
+    } else {
+      const copiedArray = result!.appointmentList.slice();
+      setFilterAppointments(copiedArray.reverse())
+    }
+  };
+
+  const handleFilterDsc = () => {
+    setFilterAsc(false)
+    // setFilterAppointments(emptyAppointments)
   };
 
   const exportToExcel = async () => {
@@ -1179,6 +1200,8 @@ const Home = () => {
             setOfficeId(fetchedOffices![0].id);
             setShowTotal(false);
             setSelectedOffices([]);
+            setFilterAsc(false);
+            setFilterAppointments(emptyAppointments);
           }}>
             <IoReload />
             <p>Aujourd&rsquo;hui</p>
@@ -1633,7 +1656,7 @@ const Home = () => {
                   <p className=" text-xs font-semibold">{record.amount}</p>
                   <div className=" flex items-center gap-1 mt-1">
                     <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
-                    {result?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {result?.waitings > 0 ?((record.amount / result?.waitings) * 100).toFixed(): 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                    {result?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {result?.waitings > 0 ? ((record.amount / result?.waitings) * 100).toFixed() : 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
                   </div>
                 </div>
               ))
@@ -1643,7 +1666,7 @@ const Home = () => {
                     <p className=" text-xs font-semibold">{record.amount}</p>
                     <div className=" flex items-center gap-1 mt-1">
                       <p className=" text-xs capitalize">{record.name}</p>
-                      {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {filterStats?.waitings > 0? ((record.amount / filterStats?.waitings) * 100).toFixed(): 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
+                      {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {filterStats?.waitings > 0 ? ((record.amount / filterStats?.waitings) * 100).toFixed() : 0}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
                     </div>
                   </div>
                 ))
@@ -2053,8 +2076,13 @@ const Home = () => {
         </div>
       }
       <h3 className=" font-bold my-6">5-Tableau détaillé du flux des clients</h3>
+
       <div className=" ">
-        <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+        <div className=" flex items-center justify-between">
+          <button onClick={() => exportTableDataToExcel("tickets", "Tickets traités", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-2 mb-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          {!filterAsc ? <button onClick={handleReverse} className=" bg-black rounded-md py-2 mb-1 px-2 text-white text-xs flex items-center gap-2"><FaFilter />Filtrer par ordre croissant</button> : <button onClick={handleFilterDsc} className=" bg-black rounded-md py-2 mb-1 px-2 text-white text-xs flex items-center gap-2"><FaFilter />Filtrer par ordre décroissant</button>}
+        </div>
+
         <table className="w-full table-fixed">
           <thead>
             <tr className=" bg-black">
@@ -2072,7 +2100,7 @@ const Home = () => {
             </tr>
           </thead>
           {
-            seeAll ? filter === false ? <> {result.appointmentList?.map((appointment) => (
+            seeAll ? filter === false ? <> {filterAsc === false ? result.appointmentList?.map((appointment) => (
               <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                 <td className='text-xs py-2 px-3 font-semibold'>
                   {appointment.date}
@@ -2099,7 +2127,44 @@ const Home = () => {
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                  {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                </td>
+
+              </tr>
+            )) : filterAppointments.map((appointment) => (
+              <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                <td className='text-xs py-2 px-3 font-semibold'>
+                  {appointment.date}
+                </td>
+                <td className='text-xs py-2 px-3 font-semibold'>
+                  {appointment.time}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.num}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.num}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.Service.name}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.Subservice.name}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                </td>
+                <td className=' text-xs opacity-60'>
+                  {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2118,10 +2183,10 @@ const Home = () => {
 
                 </td>
                 <td className=' text-xs '>
-                  {result.appointments}
+                  {result.appointmentList.length}
                 </td>
                 <td className=' text-xs '>
-                  {result.appointments}
+                  {result.appointmentList.length}
                 </td>
                 <td className=' text-xs '>
                   {result.services}
@@ -2148,7 +2213,7 @@ const Home = () => {
             </>
               :
               <>
-                {filterStats.appointmentList?.map((appointment) => (
+                {filterAsc === false ? filterStats.appointmentList?.map((appointment) => (
                   <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td className='text-xs py-2 px-3 font-semibold'>
                       {appointment.date}
@@ -2175,7 +2240,44 @@ const Home = () => {
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                      {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                    </td>
+
+                  </tr>
+                )) : filterAppointments.map((appointment) => (
+                  <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                      {appointment.date}
+                    </td>
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                      {appointment.time}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.num}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.num}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.Service.name}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.Subservice.name}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                    </td>
+                    <td className=' text-xs opacity-60'>
+                      {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2194,10 +2296,10 @@ const Home = () => {
 
                   </td>
                   <td className=' text-xs '>
-                    {filterStats.appointments}
+                    {filterStats.appointmentList.length}
                   </td>
                   <td className=' text-xs '>
-                    {filterStats.appointments}
+                    {filterStats.appointmentList.length}
                   </td>
                   <td className=' text-xs '>
                     {filterStats.services}
@@ -2224,7 +2326,7 @@ const Home = () => {
               </> :
               filter === false ?
                 <>
-                  {result.appointmentList?.map((appointment, index) => {
+                  {filterAsc === false ? result.appointmentList?.map((appointment, index) => {
                     if (index < 16) {
                       return (
                         <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
@@ -2253,7 +2355,7 @@ const Home = () => {
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2264,7 +2366,48 @@ const Home = () => {
                         </tr>
                       );
                     }
-                  })
+                  }) :
+                    filterAppointments.map((appointment, index) => {
+                      if (index < 16) {
+                        return (
+                          <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-3 font-semibold'>
+                              {appointment.date}
+                            </td>
+                            <td className='text-xs py-2 px-3 font-semibold'>
+                              {appointment.time}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.num}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.num}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.Service.name}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.Subservice.name}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                              {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                            </td>
+                          </tr>
+                        );
+                      }
+                    })
                   }
                   <tr className="bg-green-600 text-white">
                     <td className='text-xs py-2 px-3 font-semibold'>
@@ -2274,10 +2417,10 @@ const Home = () => {
 
                     </td>
                     <td className=' text-xs'>
-                      {result.appointments}
+                      {result.appointmentList.length}
                     </td>
                     <td className=' text-xs'>
-                      {result.appointments}
+                      {result.appointmentList.length}
                     </td>
                     <td className=' text-xs'>
                       {result.services}
@@ -2303,7 +2446,7 @@ const Home = () => {
                   </tr>
                 </> :
                 <>
-                  {filterStats.appointmentList?.map((appointment, index) => {
+                  {filterAsc === false ? filterStats.appointmentList?.map((appointment, index) => {
                     if (index < 16) {
                       return (
                         <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
@@ -2326,13 +2469,53 @@ const Home = () => {
                             {appointment.Subservice.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.callTime}
+                            {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            {appointment.received ? <span className=" font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.missing ? <p>Oui</p> : <p>Non</p>}
+                          </td>
+                        </tr>
+                      );
+                    }
+                  }) :  filterAppointments.map((appointment, index) => {
+                    if (index < 16) {
+                      return (
+                        <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.date}
+                          </td>
+                          <td className='text-xs py-2 px-3 font-semibold'>
+                            {appointment.time}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.num}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.num}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Service.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.Subservice.name}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
+                          </td>
+                          <td className=' text-xs opacity-60'>
+                            {appointment.received ? <span className=" font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2352,10 +2535,10 @@ const Home = () => {
 
                     </td>
                     <td className=' text-xs'>
-                      {filterStats.appointments}
+                      {filterStats.appointmentList.length}
                     </td>
                     <td className=' text-xs'>
-                      {filterStats.appointments}
+                      {filterStats.appointmentList.length}
                     </td>
                     <td className=' text-xs'>
                       {filterStats.services}

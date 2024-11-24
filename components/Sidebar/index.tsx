@@ -21,7 +21,7 @@ const rootItems = [
         icon: TbReportAnalytics
     },
     {
-        label: "Configuration",
+        label: "Métriques",
         href: "/home/time",
         icon: MdTimer
     },
@@ -78,6 +78,11 @@ const adminItems = [
         label: "Agences",
         href: "/home/offices",
         icon: PiBuildingsFill
+    },
+    {
+        label: "Métriques",
+        href: "/home/time",
+        icon: MdTimer
     },
     {
         label: "Paramètre",

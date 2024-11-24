@@ -132,11 +132,22 @@ const Time = () => {
                                 </div>
                             </div>
                         }
+                        {
+                            time.type === "minimalServingTime" &&
+                            <div className=' my-8'>
+                                <p className=' text-sm font-semibold my-2'>Temps minimal de traitement</p>
+                                <div className="flex gap-3 items-center">
+                                <p className=' text-xs'>Durée : {time.time} minutes</p>
+                                    <FiEdit3 size={16} onClick={() => handleOpenEditTime(time)} className=" cursor-pointer hover:text-blue-500" />
+                                </div>
+                            </div>
+                        }
                     </>
                 ))
             }
             {fetchedTimes && fetchedTimes.length == 0 && <button onClick={() => handleOpenTime("meanWaitingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4 '><IoAddCircleOutline size={20} /> Ajouter Le temps moyen d&apos;attente</button>}
             {fetchedTimes && fetchedTimes.length < 2 && <button onClick={() => handleOpenTime("meanServingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4'><IoAddCircleOutline size={20} /> Ajouter Le temps moyen de traitement</button>}
+            {fetchedTimes && fetchedTimes.length < 3 && <button onClick={() => handleOpenTime("minimalServingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4'><IoAddCircleOutline size={20} /> Ajouter Le temps minimal de traitement</button>}
             <Modal
                 open={openTime}
                 onClose={handleCloseTime}
@@ -154,7 +165,7 @@ const Time = () => {
                             valueLabelDisplay="auto"
                             step={1}
                             marks
-                            min={5}
+                            min={1}
                             max={180}
                             className=' text-black'
                         />
@@ -183,7 +194,7 @@ const Time = () => {
                             valueLabelDisplay="auto"
                             step={1}
                             marks
-                            min={5}
+                            min={1}
                             max={180}
                             className=' text-black'
                         />
