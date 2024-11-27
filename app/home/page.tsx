@@ -111,7 +111,8 @@ const Home = () => {
     serveAppointmentsByHourSlot: [],
     appointmentsByDays: [],
     appointmentsBySubServiceByDays: [],
-    totalByOffices: []
+    totalByOffices: [],
+    normalAppointments: 0
   }
 
   const [filterStats, setFilterStats] = useState(emptyStats);
@@ -2004,13 +2005,40 @@ const Home = () => {
                   data: filterStats?.appointmentsByDays.map(record => record.receives), // Les données pour "Traité" pour chaque service
                 },
                 {
-                  label: 'Clients en attente',
+                  label: 'Attente optimale',
+                  backgroundColor: 'rgba(39, 245, 161, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(39, 245, 161, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(39, 245, 161, 0.8)',
+                  hoverBorderColor: 'rgba(39, 245, 161, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.inWaitings), // Les données pour "En attente" pour chaque service
+                },
+                {
+                  label: 'Attente non optimale',
                   backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
                   borderColor: 'rgba(255, 0, 0, 1)',
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
                   hoverBorderColor: 'rgba(255, 0, 0, 1)',
-                  data: filterStats?.appointmentsByDays.map(record => record.waiting), // Les données pour "En attente" pour chaque service
+                  data: filterStats?.appointmentsByDays.map(record => record.notInWaitings), // Les données pour "En attente" pour chaque service
+                },
+                {
+                  label: 'Traitement optimal',
+                  backgroundColor: 'rgba(13, 233, 230, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(13, 233, 230, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(13, 233, 230, 0.8)',
+                  hoverBorderColor: 'rgba(13, 233, 230, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.inServings), // Les données pour "En attente" pour chaque service
+                },
+                {
+                  label: 'Traitement non optimal',
+                  backgroundColor: 'rgba(173, 37, 95, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(173, 37, 95, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(173, 37, 95, 0.8)',
+                  hoverBorderColor: 'rgba(173, 37, 95, 1)',
+                  data: filterStats?.appointmentsByDays.map(record => record.notInServings), // Les données pour "En attente" pour chaque service
                 },
               ],
             }}
@@ -2127,7 +2155,7 @@ const Home = () => {
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                  {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2164,7 +2192,7 @@ const Home = () => {
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                  {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2240,7 +2268,7 @@ const Home = () => {
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                      {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2277,7 +2305,7 @@ const Home = () => {
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                      {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2355,7 +2383,7 @@ const Home = () => {
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2396,7 +2424,7 @@ const Home = () => {
                               {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                             </td>
                             <td className=' text-xs opacity-60'>
-                              {appointment.received ? <span className="font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                              {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                             </td>
                             <td className=' text-xs opacity-60'>
                               {appointment.transfered ? <p>Oui</p> : <p>Non</p>}

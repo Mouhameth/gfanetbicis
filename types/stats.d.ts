@@ -4,6 +4,7 @@ interface Stats {
     receives: number;
     waitings: number;
     appointments: number;
+    normalAppointments: number;
     appointmentsByService: Record[];
     serveAppointmentsByService: Record[],
     waitingAppointmentsByService: Record[],
@@ -50,6 +51,10 @@ interface DayRecord {
     all: number;
     receives: number;
     waiting: number;
+    inWaitings: number;
+    inServings: number;
+    notInWaitings: number;
+    notInServings: number;
 }
 
 interface DaysRecord {
