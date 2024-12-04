@@ -20,6 +20,7 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
 import { FaCirclePlay } from "react-icons/fa6";
 import { FaPauseCircle } from 'react-icons/fa';
+import { Sentence } from '@/types/sentence';
 
 const schema = zod.object({
   id: zod.any().optional(),
@@ -37,7 +38,7 @@ const Medias = () => {
   const url = `/multimedia`;
   const urlSentences = `/sentence`;
   const { data: fetchedMedias, isLoading, mutate } = useSWR(url, () => axiosAuth.get<Media[]>(url).then((res) => res.data));
-  const { data: fetchedSentences, isLoading: sentencesLoading, error: sentencesError, mutate: sentencesMutate } = useSWR(urlSentences, () => axiosAuth.get<Sentence[]>(urlSentences).then((res) => res.data), {
+  const { data: fetchedSentences, isLoading: sentencesLoading, error: sentencesError, mutate: sentencesMutate } = useSWR(`${urlSentences}/all`, () => axiosAuth.get<Sentence[]>(`${urlSentences}/all`).then((res) => res.data), {
     dedupingInterval: 0
   });
   const [open, setOpen] = useState(false);

@@ -295,13 +295,13 @@ const Home = () => {
   const handleWeekFilter = async (start: string, end: string) => {
     const differenceInDays = amountOfDays(`${start.split('/')[2]}/${start.split('/')[1]}/${start.split('/')[0]}`, `${end.split('/')[2]}/${end.split('/')[1]}/${end.split('/')[0]}`);
 
-    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours: ${differenceInDays}`)
+    setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} de ${start} à ${end}, nombre de jours ouvrés: ${differenceInDays}`)
 
     try {
       setFilter(true);
       setFilterTwoDate(true);
       setLoading(true);
-      setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours: ${differenceInDays}`);
+      setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours ouvrés: ${differenceInDays}`);
       const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, ids: selectedOffices.length === 0 ? [officeId] : selectedOffices }));
       if (res.status == 200) {
         setFilterStats(res.data);
@@ -1473,8 +1473,8 @@ const Home = () => {
           <button onClick={() => exportTicketsDataToExcel("allTicketsByService", "Nombre de tickets par Servic", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <h3 className=" text-center p-1">Visualisation de l&lsquo;affluence par service</h3>
           <Bar
-            data={{
-              labels: filter === false ? result?.appointmentsByService.map(record => record.name) : filterStats?.appointmentsByService.map(record => record.name), // Les noms de vos services
+            data={filter === false ? {
+              labels: result?.appointmentsByService.map(record => record.name), // Les noms de vos services
               datasets: [
                 {
                   label: 'Reçu',
@@ -1483,7 +1483,7 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
                   hoverBorderColor: 'rgba(0, 0, 0, 1)',
-                  data: filter === false ? result?.appointmentsByService.map(record => record.amount) : filterStats?.appointmentsByService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
+                  data: result?.appointmentsByService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
                 },
                 {
                   label: 'Traité',
@@ -1492,7 +1492,7 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
                   hoverBorderColor: 'rgba(0, 128, 0, 1)',
-                  data: filter === false ? result?.serveAppointmentsByService.map(record => record.amount) : filterStats?.serveAppointmentsByService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                  data: result?.serveAppointmentsByService.map(record => record.amount), // Les données pour "Traité" pour chaque service
                 },
                 {
                   label: 'En attente',
@@ -1501,8 +1501,102 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
                   hoverBorderColor: 'rgba(255, 0, 0, 1)',
-                  data: filter === false ? result?.waitingAppointmentsByService.map(record => record.amount) : filterStats?.waitingAppointmentsByService.map(record => record.amount), // Les données pour "En attente" pour chaque service
+                  data: result?.waitingAppointmentsByService.map(record => record.amount)  // Les données pour "En attente" pour chaque service
                 },
+                {
+                  label: 'Attente optimale',
+                  backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(58, 252, 193, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(58, 252, 193, 0.8)',
+                  hoverBorderColor: 'rgba(58, 252, 193, 1)',
+                  data: result?.totatlInWaitingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Attente Non Optimale',
+                  backgroundColor: 'rgba(248, 82, 139, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(248, 82, 139, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(248, 82, 139, 0.8)',
+                  hoverBorderColor: 'rgba(248, 82, 139, 1)',
+                  data: result?.totatlNotInWaitingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Optimale',
+                  backgroundColor: 'rgba(40, 125, 100, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(40, 125, 100, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(40, 125, 100, 0.8)',
+                  hoverBorderColor: 'rgba(40, 125, 100, 1)',
+                  data: result?.totatlInServingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Non Optimale',
+                  backgroundColor: 'rgba(255, 175, 202, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 175, 202, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 175, 202, 0.8)',
+                  hoverBorderColor: 'rgba(255, 175, 202, 1)',
+                  data: result?.totatlNotInServingByService.map(record => record.amount)
+                }
+              ],
+            } : {
+              labels: filterStats?.appointmentsByService.map(record => record.name), // Les noms de vos services
+              datasets: [
+                {
+                  label: 'Reçu',
+                  backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
+                  borderColor: 'rgba(0, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 0, 0, 1)',
+                  data: filterStats?.appointmentsByService.map(record => record.amount) // Les données pour "Reçu" pour chaque service
+                },
+                {
+                  label: 'Traité',
+                  backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
+                  borderColor: 'rgba(0, 128, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 128, 0, 1)',
+                  data: filterStats?.serveAppointmentsByService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                },
+                {
+                  label: 'Attente optimale',
+                  backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(58, 252, 193, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(58, 252, 193, 0.8)',
+                  hoverBorderColor: 'rgba(58, 252, 193, 1)',
+                  data: filterStats?.totatlInWaitingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Attente Non Optimale',
+                  backgroundColor: 'rgba(248, 82, 139, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(248, 82, 139, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(248, 82, 139, 0.8)',
+                  hoverBorderColor: 'rgba(248, 82, 139, 1)',
+                  data: filterStats?.totatlNotInWaitingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Optimale',
+                  backgroundColor: 'rgba(40, 125, 100, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(40, 125, 100, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(40, 125, 100, 0.8)',
+                  hoverBorderColor: 'rgba(40, 125, 100, 1)',
+                  data: filterStats?.totatlInServingByService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Non Optimale',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filterStats?.totatlNotInServingByService.map(record => record.amount)
+                }
               ],
             }}
             width={100}
@@ -1707,84 +1801,60 @@ const Home = () => {
       </div>
       {
         filterTwoDate === true && <div>
-          {
-            filterStats.appointmentsBySubServiceByDays.map(item =>
-              <div key={item.date} >
-                <p className=" bg-white p-2 rounded-md mt-4 w-fit text-xs font-bold mx-auto">{item.date}</p>
-                <div className=" flex justify-center mb-8">
-                  <div className=" w-4 bg-black">
-                  </div>
-                  <div className="flex bg-white rounded-sm justify-between items-center ">
-                    <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
-                      <div className=" flex items-center gap-2 justify-center">
-                        <div className=" w-4 h-4 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
-                          <IoCheckmarkDoneCircleSharp className=" text-green-600 w-3" />
-                        </div>
-                        <p className=" text-xs font-bold">Clients traités</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
-                        {
-                          item?.serveAppointmentsBySubService.map(record => (
-                            <div key={record.name} className=" text-center">
-                              <p className=" text-xs font-semibold">{record.amount}</p>
-                              <div className=" flex items-center gap-1 mt-1">
-                                <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
-                                {item?.serveAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.receives) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </div>
-                    </div>
-                    <div className=" w-fit h-fit py-4 border-r-[1px] px-2">
-                      <div className=" flex items-center gap-2 justify-center">
-                        <div className=" w-4 h-4 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
-                          <RiLoader2Fill className=" text-red-600 w-3" />
-                        </div>
-                        <p className=" text-xs font-bold">Clients en attente</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
-                        {
-                          item?.waitingAppointmentsBySubService.map(record => (
-                            <div key={record.name} className=" text-center">
-                              <p className=" text-xs font-semibold">{record.amount}</p>
-                              <div className=" flex items-center gap-1 mt-1">
-                                <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
-                                {filterStats?.waitingAppointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-red-500` : `text-green-500`} `} > {((record.amount / filterStats?.waitings) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </div>
-                    </div>
-                    <div className=" w-fit h-fit p-4 px-2">
-                      <div className=" flex items-center gap-2 justify-center">
-                        <div className=" w-4 h-4 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
-                          <BsStickyFill className=" text-yellow-600 w-2" />
-                        </div>
-                        <p className=" text-xs font-bold">Clients totalisés</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 justify-items-center items-center my-2 px-2 w-fit">
-                        {item?.appointmentsBySubService.map(record => (
-                          <div key={record.name} className=" text-center">
-                            <p className=" text-xs font-semibold">{record.amount}</p>
-                            <div className=" flex items-center gap-1 mt-1">
-                              <p className=" text-xs ">{record.name.charAt(0).toUpperCase() + record.name.slice(1).toLowerCase()}</p>
-                              {filterStats?.appointmentsBySubService ? <p className={`text-xs font-semibold ${record.amount > 0 ? `text-green-500` : `text-red-500`} `} > {((record.amount / filterStats?.appointments) * 100).toFixed()}%</p> : <p className=" text-xs font-semibold text-red-500">0%</p>}
-                            </div>
-                          </div>
-                        ))
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )
-          }
+          <table className="w-full table-fixed">
+            <thead>
+              <tr className=" bg-black text-white">
+                <th className="w-24 px-3 py-4 text-left  text-xs font-semibold">Date</th>
+                <th className="w-2/12 px-3 py-4 text-center  text-xs font-semibold">Guichet</th>
+                <th className=" w-40 py-4 text-center  text-xs font-semibold">Clients totalisés</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients traités</th>
+                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Attente Optimale</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Attente Non Optimale</th>
+                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Traitement Optimale</th>
+                <th className='w-48 py-4 text-center  text-xs font-semibold'>Traitement Non Optimale</th>
+              </tr>
+            </thead>
+            {
+              filterStats.appointmentsBySubServiceByDays?.map((date) => (
+                < >
+                  {
+                    date.appointmentsBySubService?.map((item, index) => (
+                      <tr key={index} className=" bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <td className=' w-24 text-xs p-3 '>
+                          <p>{date.date}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center '>
+                          <p>{date?.appointmentsBySubService[index].name}</p>
+                        </td>
+                        <td className='w-40 text-xs py-3  text-center'>
+                          <p>{date?.appointmentsBySubService[index].amount}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3  text-center'>
+                          <p>{date?.serveAppointmentsBySubService[index].amount}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.totalInWaitingBySubService[index].amount}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.totalNotInWaitingBySubService[index].amount}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.totalInServingBySubService[index].amount}</p>
+                        </td>
+                        <td className='w-48 text-xs py-3 text-center'>
+                          <p>{date.totalNotInServingBySubService[index].amount}</p>
+                        </td>
+                      </tr>
+                    ))
+                  }
+                </>
+              ))
+            }
+          </table>
+          
         </div>
       }
-      <div className=" flex justify-center gap-12 mb-7">
+      <div className=" flex justify-center gap-12 my-7">
         <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <MdTimer size={30} className=" mx-auto" />
@@ -1839,8 +1909,8 @@ const Home = () => {
           <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <h3 className=" text-center p-1">Visualisation de l&apos;affluence point d&apos;appel</h3>
           <Bar
-            data={{
-              labels: filter === false ? result?.appointmentsBySubService.map(record => record.name) : filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
+            data={filter === false ? {
+              labels: result?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
               datasets: [
                 {
                   label: 'Reçu',
@@ -1849,7 +1919,7 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
                   hoverBorderColor: 'rgba(0, 0, 0, 1)',
-                  data: filter === false ? result?.appointmentsBySubService.map(record => record.amount) : filterStats?.appointmentsBySubService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
+                  data: result?.appointmentsBySubService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
                 },
                 {
                   label: 'Traité',
@@ -1858,7 +1928,7 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
                   hoverBorderColor: 'rgba(0, 128, 0, 1)',
-                  data: filter === false ? result?.serveAppointmentsBySubService.map(record => record.amount) : filterStats?.serveAppointmentsBySubService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                  data: result?.serveAppointmentsBySubService.map(record => record.amount), // Les données pour "Traité" pour chaque service
                 },
                 {
                   label: 'En attente',
@@ -1867,8 +1937,102 @@ const Home = () => {
                   borderWidth: 1,
                   hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
                   hoverBorderColor: 'rgba(255, 0, 0, 1)',
-                  data: filter === false ? result?.waitingAppointmentsBySubService.map(record => record.amount) : filterStats?.waitingAppointmentsBySubService.map(record => record.amount), // Les données pour "En attente" pour chaque service
+                  data: result?.waitingAppointmentsBySubService.map(record => record.amount), // Les données pour "En attente" pour chaque service
                 },
+                {
+                  label: 'Attente optimale',
+                  backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(58, 252, 193, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(58, 252, 193, 0.8)',
+                  hoverBorderColor: 'rgba(58, 252, 193, 1)',
+                  data: result?.totatlInWaitingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Attente Non Optimale',
+                  backgroundColor: 'rgba(248, 82, 139, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(248, 82, 139, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(248, 82, 139, 0.8)',
+                  hoverBorderColor: 'rgba(248, 82, 139, 1)',
+                  data: result?.totatlNotInWaitingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Optimale',
+                  backgroundColor: 'rgba(40, 125, 100, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(40, 125, 100, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(40, 125, 100, 0.8)',
+                  hoverBorderColor: 'rgba(40, 125, 100, 1)',
+                  data: result?.totatlInServingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Non Optimale',
+                  backgroundColor: 'rgba(255, 175, 202, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 175, 202, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 175, 202, 0.8)',
+                  hoverBorderColor: 'rgba(255, 175, 202, 1)',
+                  data: result?.totatlNotInServingBySubService.map(record => record.amount)
+                }
+              ],
+            } : {
+              labels: filterStats?.appointmentsBySubService.map(record => record.name), // Les noms de vos services
+              datasets: [
+                {
+                  label: 'Reçu',
+                  backgroundColor: 'rgb(0, 0, 0)', // Noir foncé pour "Reçu"
+                  borderColor: 'rgba(0, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 0, 0, 1)',
+                  data: filterStats?.appointmentsBySubService.map(record => record.amount), // Les données pour "Reçu" pour chaque service
+                },
+                {
+                  label: 'Traité',
+                  backgroundColor: 'rgba(0, 128, 0, 0.7)', // Vert foncé pour "Traité"
+                  borderColor: 'rgba(0, 128, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(0, 128, 0, 0.8)',
+                  hoverBorderColor: 'rgba(0, 128, 0, 1)',
+                  data: filterStats?.serveAppointmentsBySubService.map(record => record.amount), // Les données pour "Traité" pour chaque service
+                },
+                {
+                  label: 'Attente optimale',
+                  backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(58, 252, 193, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(58, 252, 193, 0.8)',
+                  hoverBorderColor: 'rgba(58, 252, 193, 1)',
+                  data: filterStats?.totatlInWaitingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Attente Non Optimale',
+                  backgroundColor: 'rgba(248, 82, 139, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(248, 82, 139, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(248, 82, 139, 0.8)',
+                  hoverBorderColor: 'rgba(248, 82, 139, 1)',
+                  data: filterStats?.totatlNotInWaitingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Optimale',
+                  backgroundColor: 'rgba(40, 125, 100, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(40, 125, 100, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(40, 125, 100, 0.8)',
+                  hoverBorderColor: 'rgba(40, 125, 100, 1)',
+                  data: filterStats?.totatlInServingBySubService.map(record => record.amount)
+                },
+                {
+                  label: 'Traitement Non Optimale',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filterStats?.totatlNotInServingBySubService.map(record => record.amount)
+                }
               ],
             }}
             width={100}
@@ -1984,7 +2148,7 @@ const Home = () => {
           <h3 className=" text-center p-1">Répartition des tickets par date</h3>
           <Bar
             data={{
-              labels: filterStats?.appointmentsByDays.map(record => record.name), // Les noms de vos services
+              labels: filterStats?.appointmentsByDays.map(record => format(`${record.name.split('/')[1]}/${record.name.split('/')[0]}/${record.name.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })), // Les noms de vos services
               datasets: [
                 {
                   label: 'Nombre de clients',
@@ -2514,7 +2678,7 @@ const Home = () => {
                         </tr>
                       );
                     }
-                  }) :  filterAppointments.map((appointment, index) => {
+                  }) : filterAppointments.map((appointment, index) => {
                     if (index < 16) {
                       return (
                         <tr key={appointment.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">

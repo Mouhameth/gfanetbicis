@@ -1,10 +1,10 @@
 import { RxDashboard } from "react-icons/rx";
 import SidebarLogo from "./SideBarLogo";
-import { HiOutlineUserGroup } from "react-icons/hi2";
+import { HiBellAlert, HiOutlineUserGroup } from "react-icons/hi2";
 import { LuSettings } from "react-icons/lu";
 import { useSession } from "next-auth/react";
 import SidebarItem from "./SideBarItem";
-import { BsPersonCircle } from "react-icons/bs";
+import { BsCurrencyExchange, BsPersonCircle } from "react-icons/bs";
 import { MdPermMedia, MdTimer } from "react-icons/md";
 import { PiBuildingsFill } from "react-icons/pi";
 import { TbReportAnalytics } from "react-icons/tb";
@@ -83,6 +83,16 @@ const adminItems = [
         label: "Métriques",
         href: "/home/time",
         icon: MdTimer
+    },
+    {
+        label: "Devis",
+        href: "/home/devis",
+        icon: BsCurrencyExchange
+    },
+    {
+        label: "Alertes",
+        href: "/home/alert",
+        icon: HiBellAlert
     },
     {
         label: "Paramètre",

@@ -62,7 +62,12 @@ interface DaysRecord {
     appointmentsBySubService: Record[];
     serveAppointmentsBySubService: Record[];
     waitingAppointmentsBySubService: Record[];
+    totalInWaitingBySubService: Record[];
+    totalNotInWaitingBySubService: Record[];
+    totalInServingBySubService: Record[];
+    totalNotInServingBySubService: Record[];
 }
+
 interface TotalRecord {
     name: string;
     receives: number;
