@@ -29,7 +29,7 @@ const schema = zod.object({
 }).required();
 type FormData = zod.infer<typeof schema>;
 
-const home = () => {
+const Home = () => {
     const useChangeTitle = useChangeHeaderTitle();
     const axiosAuth = useAxiosAuth();
     const [alertType, setAlertType] = useState('');
@@ -175,8 +175,8 @@ const home = () => {
                 {...register("type", {
                     onChange: (e) => setAlertType(e.target.value)
                 })} >
-                <option value="">--Sélectionnez le type d'alerte--</option>
-                <option value="OVERWAITING">Recevoir une alerte sur un temps d'attente élevé</option>
+                <option value="">--Sélectionnez le type d&apos;alerte--</option>
+                <option value="OVERWAITING">Recevoir une alerte sur un temps d&apos;attente élevé</option>
                 <option value="COUNT">Recevoir une alerte sur une affluence élevée</option>
                 <option value="OVERPROCESSING">Recevoir une alerte sur un temps de traitement élevé</option>
                 <option value="INACTIVE">Recevoir une alerte sur une inactivité longue</option>
@@ -205,7 +205,7 @@ const home = () => {
                         {
                             fetchedAlert?.map((alert) => (
 
-                                <div className=" flex flex-col justify-between bg-white border-[2px] border-neutral-200 rounded-xl p-2">
+                                <div key={alert.id} className=" flex flex-col justify-between bg-white border-[2px] border-neutral-200 rounded-xl p-2">
                                     <div className=" flex justify-between items-start p-2">
                                         <div className=" flex gap-4 items-start justify-start pr-3">
                                             <div className=" w-8 h-8 flex justify-center items-center bg-white p-2 rounded-full shadow-sm shadow-blue-300 text-black border">
@@ -266,7 +266,7 @@ const home = () => {
             >
                 <div className=' w-1/4 bg-white p-4  rounded-lg mx-auto my-12'>
                     <p className=' text-sm font-semibold py-2'>Suppression</p>
-                    <p className=' text-xs font-semibold text-center'>Voulez-vous supprimer l'alerte: {alertToEdit?.content}</p>
+                    <p className=' text-xs font-semibold text-center'>Voulez-vous supprimer l&apos;alerte: {alertToEdit?.content}</p>
                     <div className=' py-4 flex items-center justify-center gap-3'>
                         <button className=' bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={deleteAlert}>Oui</button>
                         <button className=' bg-red-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={handleCloseDelete}>Non</button>
@@ -277,4 +277,4 @@ const home = () => {
     )
 }
 
-export default home
+export default Home

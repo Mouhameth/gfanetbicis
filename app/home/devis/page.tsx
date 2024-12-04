@@ -56,8 +56,7 @@ const currencies: Currency[] = [
     { name: "Dollar singapourien", code: "SGD", symbol: "$", flag: "🇸🇬" },
     { name: "Dinar algérien", code: "DZD", symbol: "د.ج", flag: "🇩🇿" }
 ];
-
-const home = () => {
+const Home = () => {
     const useChangeTitle = useChangeHeaderTitle();
     const axiosAuth = useAxiosAuth();
     const [loading, setLoading] = useState(false);
@@ -362,4 +361,4 @@ const home = () => {
     )
 }
 
-export default home
+export default Home
