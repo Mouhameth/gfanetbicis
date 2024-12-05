@@ -25,7 +25,10 @@ const schema = zod.object({
             return { message: "Une erreur est survenue." };
         }
     }),
-    count: zod.any().optional()
+    count: zod.any().optional(),
+    officeId: zod.number({
+        required_error: "Sélectionner une agence"
+    })
 }).required();
 type FormData = zod.infer<typeof schema>;
 
@@ -48,6 +51,9 @@ const Home = () => {
         const response = await axiosAuth.get<Alert[]>(urlAlert);
         return response.data;
     });
+
+    const url = `/office`;
+    const { data: fetchedOffices, isLoading: isLoadingOffice, error: errorOffice } = useSWR(url, () => axiosAuth.get<Office[]>(url).then((res) => res.data));
 
     const { register, handleSubmit, reset, setValue, getValues, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(schema)
@@ -145,7 +151,7 @@ const Home = () => {
                         <input
                             className="flex-1 focus:outline-none"
                             type="text"
-                            placeholder="Le temps d'attente"
+                            placeholder="Le temps d'attente en minute"
                             {...register("count", { valueAsNumber: true })}
                         />
                     </div>
@@ -159,7 +165,7 @@ const Home = () => {
                         <input
                             className="flex-1 focus:outline-none"
                             type="text"
-                            placeholder="Le temps de traitement"
+                            placeholder="Le temps de traitement en minute"
                             {...register("count", { valueAsNumber: true })}
                         />
                     </div>
@@ -172,6 +178,15 @@ const Home = () => {
     const bodyContent = (
         <form className="flex flex-col gap-2 mb-4" onSubmit={handleSubmit(onSubmit)}>
             <select className='flex items-center border border-black rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
+                {...register("officeId", { valueAsNumber: true })}>
+                <option value="">--Sélectionnez une agence--</option>
+                {fetchedOffices?.map((office) => (
+                    <option key={office.id} value={office.id}>{office.name}</option>
+                ))}
+            </select>
+            <p className=" text-xs text-red-500">{errors.officeId?.message}</p>
+
+            <select className='flex items-center border border-black rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
                 {...register("type", {
                     onChange: (e) => setAlertType(e.target.value)
                 })} >
@@ -180,7 +195,7 @@ const Home = () => {
                 <option value="COUNT">Recevoir une alerte sur une affluence élevée</option>
                 <option value="OVERPROCESSING">Recevoir une alerte sur un temps de traitement élevé</option>
                 <option value="INACTIVE">Recevoir une alerte sur une inactivité longue</option>
-                <option value="MONO">Recevoir une alerte sur un système monofonctionnel</option>
+                <option value="MONO">Recevoir une alerte sur un système non fonctionnel</option>
 
             </select>
             <p className=" text-xs text-red-500">{errors.type?.message}</p>
@@ -190,7 +205,7 @@ const Home = () => {
         </form>
     );
 
-    if (isLoading || loading || error) {
+    if (isLoading || loading || isLoadingOffice || errorOffice || error) {
         return <Loader />
     }
 

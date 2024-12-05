@@ -110,7 +110,7 @@ const Home = () => {
     appointmentsByHourSlot: [],
     serveAppointmentsByHourSlot: [],
     appointmentsByDays: [],
-    appointmentsBySubServiceByDays: [],
+    appointmentsByDates: [],
     totalByOffices: [],
     normalAppointments: 0
   }
@@ -1418,6 +1418,76 @@ const Home = () => {
         <div className=" w-4 bg-black h-20">
         </div>
       </div>
+
+      {
+        filterTwoDate === true && <div className=" mt-4 mb-8">
+          <table className="w-full table-fixed">
+            <thead>
+              <tr className=" bg-black text-white">
+                <th className="w-24 px-3 py-4 text-left  text-xs font-semibold">Date</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients totalisés</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients traités</th>
+                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Attente optimale</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Attente non optimale</th>
+                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Traitement optimale</th>
+                <th className='w-48 py-4 text-center  text-xs font-semibold'>Traitement non optimale</th>
+              </tr>
+            </thead>
+            {
+              filterStats.appointmentsByDates?.map((date, index) => (
+                      <tr key={index} className=" bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                        <td className=' w-24 text-xs p-3 '>
+                          <p>{date.name}</p>
+                        </td>
+                        <td className='w-1/12 text-xs py-3 text-center '>
+                          <p>{date.receives}</p>
+                        </td>
+                        <td className='w-1/12 text-xs py-3  text-center'>
+                          <p>{date.serves}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3  text-center'>
+                          <p>{date.Inwaitings}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.NotInWaitings}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.Inservings}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{date.NotInServings}</p>
+                        </td>
+                      </tr>
+              ))
+            }
+            <tr className=" bg-green-500 text-white border-b font-bold">
+                        <td className=' w-24 text-xs p-3 '>
+                          <p>Totale</p>
+                        </td>
+                        <td className='w-1/12 text-xs py-3 text-center '>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
+                        </td>
+                        <td className='w-1/12 text-xs py-3  text-center'>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.serves, 0)}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3  text-center'>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.Inwaitings, 0)}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.NotInWaitings, 0)}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.Inservings, 0)}</p>
+                        </td>
+                        <td className='w-2/12 text-xs py-3 text-center'>
+                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.NotInServings, 0)}</p>
+                        </td>
+                      </tr>
+          </table>
+          
+        </div>
+      }
+      
       <h3 className=" font-bold mb-4">2-Analyse par rapport aux services</h3>
       <div className=" flex justify-center gap-12 mb-7">
         <div className=" w-fit bg-white rounded pb-1">
@@ -1799,61 +1869,7 @@ const Home = () => {
           </div>
         </div>
       </div>
-      {
-        filterTwoDate === true && <div>
-          <table className="w-full table-fixed">
-            <thead>
-              <tr className=" bg-black text-white">
-                <th className="w-24 px-3 py-4 text-left  text-xs font-semibold">Date</th>
-                <th className="w-2/12 px-3 py-4 text-center  text-xs font-semibold">Guichet</th>
-                <th className=" w-40 py-4 text-center  text-xs font-semibold">Clients totalisés</th>
-                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients traités</th>
-                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Attente Optimale</th>
-                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Attente Non Optimale</th>
-                <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Traitement Optimale</th>
-                <th className='w-48 py-4 text-center  text-xs font-semibold'>Traitement Non Optimale</th>
-              </tr>
-            </thead>
-            {
-              filterStats.appointmentsBySubServiceByDays?.map((date) => (
-                < >
-                  {
-                    date.appointmentsBySubService?.map((item, index) => (
-                      <tr key={index} className=" bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                        <td className=' w-24 text-xs p-3 '>
-                          <p>{date.date}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center '>
-                          <p>{date?.appointmentsBySubService[index].name}</p>
-                        </td>
-                        <td className='w-40 text-xs py-3  text-center'>
-                          <p>{date?.appointmentsBySubService[index].amount}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3  text-center'>
-                          <p>{date?.serveAppointmentsBySubService[index].amount}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.totalInWaitingBySubService[index].amount}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.totalNotInWaitingBySubService[index].amount}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.totalInServingBySubService[index].amount}</p>
-                        </td>
-                        <td className='w-48 text-xs py-3 text-center'>
-                          <p>{date.totalNotInServingBySubService[index].amount}</p>
-                        </td>
-                      </tr>
-                    ))
-                  }
-                </>
-              ))
-            }
-          </table>
-          
-        </div>
-      }
+
       <div className=" flex justify-center gap-12 my-7">
         <div className=" w-fit bg-white rounded pb-1">
           <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
