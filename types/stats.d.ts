@@ -83,9 +83,10 @@ interface TotalRecord {
 interface DatesRecord {
     name: string;
     receives: number;
-    serves: number;
-    Inwaitings: number;
-    NotInWaitings: number;
-    NotInServings: number;
-    Inservings: number;
+    inwaitings: number;
+    notInWaitings: number;
+    notInServings: number;
+    inservings: number;
+    meanWaiting: number;
+    meanServing: number;
 }

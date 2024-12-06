@@ -1426,7 +1426,8 @@ const Home = () => {
               <tr className=" bg-black text-white">
                 <th className="w-24 px-3 py-4 text-left  text-xs font-semibold">Date</th>
                 <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients totalisés</th>
-                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Clients traités</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Attente moyenne</th>
+                <th className="w-2/12 py-4 text-center  text-xs font-semibold">Traitement moyen</th>
                 <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Attente optimale</th>
                 <th className="w-2/12 py-4 text-center  text-xs font-semibold">Attente non optimale</th>
                 <th className='w-2/12 py-4 text-center  text-xs font-semibold'>Traitement optimale</th>
@@ -1435,59 +1436,65 @@ const Home = () => {
             </thead>
             {
               filterStats.appointmentsByDates?.map((date, index) => (
-                      <tr key={index} className=" bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                        <td className=' w-24 text-xs p-3 '>
-                          <p>{date.name}</p>
-                        </td>
-                        <td className='w-1/12 text-xs py-3 text-center '>
-                          <p>{date.receives}</p>
-                        </td>
-                        <td className='w-1/12 text-xs py-3  text-center'>
-                          <p>{date.serves}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3  text-center'>
-                          <p>{date.Inwaitings}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.NotInWaitings}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.Inservings}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{date.NotInServings}</p>
-                        </td>
-                      </tr>
+                <tr key={index} className=" bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                  <td className=' w-24 text-xs p-3 '>
+                    <p>{`${date.name.split('-')[2]}/${date.name.split('-')[1]}/${date.name.split('-')[0]}`}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3 text-center '>
+                    <p>{date.receives}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3  text-center'>
+                    <p>{format(date?.meanWaiting * 60 * 1000, 'HH:mm:ss')}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3  text-center'>
+                    <p>{format(date?.meanServing * 60 * 1000, 'HH:mm:ss')}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3  text-center'>
+                    <p>{date.inwaitings}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3 text-center'>
+                    <p>{date.notInWaitings}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3 text-center'>
+                    <p>{date.inservings}</p>
+                  </td>
+                  <td className='w-2/12 text-xs py-3 text-center'>
+                    <p>{date.notInServings}</p>
+                  </td>
+                </tr>
               ))
             }
             <tr className=" bg-green-500 text-white border-b font-bold">
-                        <td className=' w-24 text-xs p-3 '>
-                          <p>Totale</p>
-                        </td>
-                        <td className='w-1/12 text-xs py-3 text-center '>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
-                        </td>
-                        <td className='w-1/12 text-xs py-3  text-center'>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.serves, 0)}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3  text-center'>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.Inwaitings, 0)}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.NotInWaitings, 0)}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.Inservings, 0)}</p>
-                        </td>
-                        <td className='w-2/12 text-xs py-3 text-center'>
-                          <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.NotInServings, 0)}</p>
-                        </td>
-                      </tr>
+              <td className=' w-24 text-xs p-3 '>
+                <p>Totale</p>
+              </td>
+              <td className='w-1/12 text-xs py-3 text-center '>
+                <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
+              </td>
+              <td className='w-1/12 text-xs py-3  text-center'>
+                <p>{format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}</p>
+              </td>
+              <td className='w-1/12 text-xs py-3  text-center'>
+                <p>{format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}</p>
+              </td>
+              <td className='w-2/12 text-xs py-3  text-center'>
+                <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.inwaitings, 0)}</p>
+              </td>
+              <td className='w-2/12 text-xs py-3 text-center'>
+                <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.notInWaitings, 0)}</p>
+              </td>
+              <td className='w-2/12 text-xs py-3 text-center'>
+                <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.inservings, 0)}</p>
+              </td>
+              <td className='w-2/12 text-xs py-3 text-center'>
+                <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.notInServings, 0)}</p>
+              </td>
+            </tr>
           </table>
-          
+
         </div>
       }
-      
+
       <h3 className=" font-bold mb-4">2-Analyse par rapport aux services</h3>
       <div className=" flex justify-center gap-12 mb-7">
         <div className=" w-fit bg-white rounded pb-1">
@@ -2164,7 +2171,7 @@ const Home = () => {
           <h3 className=" text-center p-1">Répartition des tickets par date</h3>
           <Bar
             data={{
-              labels: filterStats?.appointmentsByDays.map(record => format(`${record.name.split('/')[1]}/${record.name.split('/')[0]}/${record.name.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })), // Les noms de vos services
+              labels: filterStats?.appointmentsByDays.map(record => format(`${record.name.split('-')[1]}/${record.name.split('-')[2]}/${record.name.split('-')[0]}`, 'EEEE dd MMMM yyyy', { locale: fr })), // Les noms de vos services
               datasets: [
                 {
                   label: 'Nombre de clients',
