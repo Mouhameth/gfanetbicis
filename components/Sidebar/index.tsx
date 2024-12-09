@@ -85,6 +85,12 @@ const adminItems = [
         icon: MdTimer
     },
     {
+        label: "Multimédias",
+        href: "/home/medias",
+        icon: MdPermMedia,
+        auth: true
+    },
+    {
         label: "Devis",
         href: "/home/devis",
         icon: BsCurrencyExchange
