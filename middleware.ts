@@ -9,37 +9,66 @@ export default withAuth(
       // Vérification des rôles
       const userRole = token?.user?.role?.name || token?.role;
   
-      // Routes accessibles pour le rôle "root"
-      const rootRoutes = [
-        "/home/admins",
-        "/home/offices",
-        "/home/settings",
-        "/home/report",
-        "/home/time",
-      ];
-  
-      if (pathname === "/home/alert" && userRole !== "admin") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-  
-      if (pathname === "/home/devis" && userRole !== "admin") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-  
-      if (rootRoutes.some((route) => pathname.startsWith(route)) && userRole !== "root") {
-        return NextResponse.redirect(new URL("/", req.url));
-      }
-  
-      if (pathname.startsWith("/home/medias")) {
-        return NextResponse.next();
-      }
+    const rootRoutes = [
+      "/home",
+      "/home/admins",
+      "/home/offices",
+      "/home/settings",
+      "/home/report",
+      "/home/time",
+      "/home/medias",
+      "/home/devis",
+      "/home/alert"
+    ];
 
-      if (pathname.startsWith("/home")) {
-        return NextResponse.next();
+    const adminsRoutes = [
+      "/home",
+      "/home/offices",
+      "/home/settings",
+      "/home/report",
+      "/home/time",
+      "/home/devis",
+      "/home/alert"
+    ];
+
+    const marketingRoutes = [
+      "/home",
+      "/home/offices",
+      "/home/report",
+      "/home/medias",
+      "/home/settings"
+    ];
+
+    const adminOfficeRoutes = [
+      "/office",
+      "/home/settings"
+    ];
+
+
+    if (userRole === "root") {
+      if (!rootRoutes.some((route) => pathname === route)) {
+        return NextResponse.redirect(new URL("/", req.url));
       }
-  
-      // Redirection par défaut pour les chemins non autorisés
-      return NextResponse.redirect(new URL("/", req.url));
+    }
+
+    if (userRole === "admin") {
+      if (!adminsRoutes.some((route) => pathname === route)) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
+    }
+
+    if (userRole === "marketing") {
+      if (!marketingRoutes.some((route) => pathname === route)) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
+    }
+    if (userRole === "user") {
+      if (!adminOfficeRoutes.some((route) => pathname === route)) {
+        return NextResponse.redirect(new URL("/", req.url));
+      }
+    }
+
+    return NextResponse.next();
     },
     {
       callbacks: {

@@ -43,6 +43,16 @@ const rootItems = [
         auth: true
     },
     {
+        label: "Devis",
+        href: "/home/devis",
+        icon: BsCurrencyExchange
+    },
+    {
+        label: "Alertes",
+        href: "/home/alert",
+        icon: HiBellAlert
+    },
+    {
         label: "Paramètre",
         href: "/home/settings",
         icon: LuSettings,
