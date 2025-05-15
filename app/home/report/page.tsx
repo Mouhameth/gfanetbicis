@@ -567,7 +567,7 @@ const Report = () => {
                     <tr className=" bg-black">
                         <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Agence</th>
                         <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Nombre Tickets %</th>
-                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Temps Moyen d'Attente %</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Temps Moyen d&rsquo;Attente %</th>
                         <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Temps Moyen de Ttraitement %</th>
                     </tr>
                 </thead>

@@ -61,7 +61,7 @@ const Offices = () => {
 
   const bodyContent = (
     <div className="">
-      <h3 className=" text-xs font-semibold">Voulez-vous supprimer l'agence {officeToDelete.name}</h3>
+      <h3 className=" text-xs font-semibold">Voulez-vous supprimer l&rsquo;agence {officeToDelete.name}</h3>
       <div className=" flex items-center justify-end mt-4 gap-3">
         <button onClick={handleClose} className=" w-28 text-xs bg-gray-300 p-2 rounded-md text-black hover:bg-gray-400">
           Non
