@@ -5,7 +5,7 @@ import { LuSettings } from "react-icons/lu";
 import { useSession } from "next-auth/react";
 import SidebarItem from "./SideBarItem";
 import { BsCurrencyExchange, BsPersonCircle } from "react-icons/bs";
-import { MdPermMedia, MdTimer } from "react-icons/md";
+import { MdPermMedia } from "react-icons/md";
 import { PiBuildingsFill } from "react-icons/pi";
 import { TbReportAnalytics } from "react-icons/tb";
 
@@ -19,11 +19,6 @@ const rootItems = [
         label: "Dashboard Général",
         href: "/home/report",
         icon: TbReportAnalytics
-    },
-    {
-        label: "Métriques",
-        href: "/home/time",
-        icon: MdTimer
     },
     {
         label: "Agences",
@@ -88,11 +83,6 @@ const adminItems = [
         label: "Agences",
         href: "/home/offices",
         icon: PiBuildingsFill
-    },
-    {
-        label: "Métriques",
-        href: "/home/time",
-        icon: MdTimer
     },
     {
         label: "Multimédias",

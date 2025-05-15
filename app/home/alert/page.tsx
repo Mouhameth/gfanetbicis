@@ -6,6 +6,8 @@ import useAxiosAuth from "@/hooks/useAxiosAuth";
 import { Alert } from "@/types/alert";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "@mui/material";
+import { useSession } from "next-auth/react";
+import { root } from "postcss";
 import { useCallback, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
@@ -27,19 +29,23 @@ const schema = zod.object({
     }),
     count: zod.any().optional(),
     officeId: zod.number({
-        required_error: "Sélectionner une agence"
-    })
+        required_error: "Sélectionner une agence",
+        invalid_type_error: "Sélectionner une agence"
+    }),
+    userId: zod.any().optional()
 }).required();
 type FormData = zod.infer<typeof schema>;
 
 const Home = () => {
     const useChangeTitle = useChangeHeaderTitle();
     const axiosAuth = useAxiosAuth();
+    const { data: userSession } = useSession();
     const [alertType, setAlertType] = useState('');
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
     const [alertToEdit, setAlertToEdit] = useState<Alert>();
+    const adminsUrl = `/user/admins/all`;
 
     useEffect(() => {
         useChangeTitle.onChanged("Alertes");
@@ -51,6 +57,7 @@ const Home = () => {
         const response = await axiosAuth.get<Alert[]>(urlAlert);
         return response.data;
     });
+    const { data: fetchedUsers, isLoading: fetchUsersLoading } = useSWR(adminsUrl, () => axiosAuth.get<User[]>(adminsUrl).then((res) => res.data));
 
     const url = `/office`;
     const { data: fetchedOffices, isLoading: isLoadingOffice, error: errorOffice } = useSWR(url, () => axiosAuth.get<Office[]>(url).then((res) => res.data));
@@ -76,10 +83,18 @@ const Home = () => {
         setOpen(false);
     };
 
-    const onSubmit = useCallback(async (data: FormData) => {
+    const onSubmit = async (data: FormData) => {
         try {
-            const countValue = getValues("count");
+            console.log(data.userId);
+            
+            if (!data.userId) {
 
+                if (userSession?.user.role.name.toLowerCase() === "root") {
+                    toast.error('Sélectionner un utilisateur', { duration: 3000, className: " text-xs" });
+                    return;
+                }
+            }
+            const countValue = getValues("count");
             if (alertType === "OVERWAITING" || alertType === "OVERPROCESSING" || alertType === "COUNT") {
                 if (!countValue || countValue < 1) {
                     toast.error('Veuillez entrer un nombre valide supérieur à 0.', { duration: 3000, className: "text-xs" });
@@ -106,7 +121,7 @@ const Home = () => {
             setLoading(false);
         }
 
-    }, [reset, setLoading, alertType, setAlertType, getValues]);
+    }
 
     const deleteAlert = async () => {
         try {
@@ -199,8 +214,20 @@ const Home = () => {
 
             </select>
             <p className=" text-xs text-red-500">{errors.type?.message}</p>
-
             {alertType && renderTargetField()}
+            {['root'].includes(userSession?.user.role.name.toLowerCase() ?? "") && <select className='flex items-center border border-black rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
+                {...register("userId", { valueAsNumber: true })} >
+                <option value="" selected>Sélectionner un utilisateur</option>
+                {
+                    fetchedUsers?.map((user) => (
+                        user.name !== "user" && <option key={user.id} value={user.id}>
+                            <>
+                                <p>{user.username}</p>
+                            </>
+                        </option>
+                    ))
+                }
+            </select>}
             <input className=" w-full bg-black mx-auto p-3 text-xs font-semibold text-white hover:bg-green-500 cursor-pointer rounded-lg mt-2" value="Soumettre" type="submit" />
         </form>
     );
@@ -239,10 +266,12 @@ const Home = () => {
                                                     {alert.content}
                                                 </h1>
                                             </div>
-
                                         </div>
                                         <button className=" hover:text-red-500" onClick={() => handleOpenDelete(alert)}><IoIosClose size={18} /></button>
                                     </div>
+                                    {
+                                        ['root'].includes(userSession?.user.role.name.toLowerCase() ?? "") && <p className=" px-2 text-xs text-gray-400">Utilisateur : {alert.User.username}</p>
+                                    }
                                     <p className=" px-2 text-xs text-gray-400">Créée le: {new Date(alert.createdAt).toLocaleString("fr-FR", {
                                         year: "numeric",
                                         month: "long",

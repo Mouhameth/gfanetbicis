@@ -10,7 +10,7 @@ import {
     ArcElement,
     Legend
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { Doughnut, Line } from 'react-chartjs-2';
 import Loader from "@/components/common/Loader";
 import useSWR from "swr";
 import useAxiosAuth from "@/hooks/useAxiosAuth";
@@ -25,7 +25,7 @@ import { Menu, MenuItem } from "@mui/material";
 import { format } from 'date-fns';
 import { fr } from "date-fns/locale/fr";
 import toast from "react-hot-toast";
-import { MdOutlineSupportAgent, MdOutlineTimelapse, MdTimer } from "react-icons/md";
+import { MdOutlineSupportAgent } from "react-icons/md";
 import 'chart.js/auto';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -71,7 +71,8 @@ const Report = () => {
         weeks: [],
         years: [],
         offices: 0,
-        totalAppointments: 0
+        totalAppointments: 0,
+        totalByOffices: []
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
@@ -135,7 +136,6 @@ const Report = () => {
 
     const handleWeekFilter = async (start: string, end: string) => {
         setDescription(`Ceci represente l'ensemble des données de toutes les agences  de ${start} à ${end}`)
-
         try {
             setFilter(true);
             setLoading(true);
@@ -151,7 +151,7 @@ const Report = () => {
             setLoading(false);
             setAnchorWeekElFilter(null);
         }
-    };
+    }
 
     const onChange = (dates: any) => {
         const [start, end] = dates;
@@ -313,7 +313,7 @@ const Report = () => {
         <div className=' bg-gray-200 h-fit  w-full rounded-t-xl p-4'>
             <div className=" w-full flex items-center justify-between">
                 <div className="flex gap-3 items-center">
-                <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+                    <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
                         <CiFilter />
                         <p className=' font-semibold' >Filtrer par année</p>
                     </button>
@@ -552,7 +552,7 @@ const Report = () => {
                                 labels: filterStats?.appointmentsByOffice.map(record => record.name),
                                 datasets: [{
                                     label: 'Le nombre de tickets en pourcentage',
-                                    data: filterStats?.appointmentsByOffice.map(record => (record.amount*100)/filterStats.totalAppointments),
+                                    data: filterStats?.appointmentsByOffice.map(record => (record.amount * 100) / filterStats.totalAppointments),
                                     backgroundColor: generateColorPalette(filterStats?.appointmentsByOffice.length),
                                     borderColor: generateColorPalette(filterStats?.appointmentsByOffice.length),
                                     borderWidth: 1
@@ -561,6 +561,48 @@ const Report = () => {
                         />
                     </div>
             }
+            <h3 className=" font-bold my-4">4-Tableau comparatif général des agences</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Agence</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Nombre Tickets %</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Temps Moyen d'Attente %</th>
+                        <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Temps Moyen de Ttraitement %</th>
+                    </tr>
+                </thead>
+                {
+                    result.totalByOffices?.map((appointment) => (
+                        <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.name}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.receives/result.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.meanWaitingTime/result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.meanServingTime/result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100).toFixed(1)}%
+                            </td>
+                        </tr>
+                    ))}
+                <tr className="bg-green-600 text-white ">
+                    <td className='text-xs py-2 px-3 font-semibold'>
+                        Total
+                    </td>
+                    <td className=' text-xs'>
+                        {(result.totalByOffices?.reduce((total, item) => total + item.receives, 0)/result.totalByOffices?.reduce((total, item) => total + item.receives, 0))*100}%
+                    </td>
+                    <td className=' text-xs'>
+                        {(result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)/result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0))*100}%
+                    </td>
+                    <td className=' text-xs'>
+                        {(result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)/result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0))*100}%
+                    </td>
+                </tr>
+            </table>
         </div>
     )
 }

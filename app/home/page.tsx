@@ -18,11 +18,11 @@ import * as FileSaver from 'file-saver';
 import XLSX from 'sheetjs-style';
 import { useEffect, useState } from "react";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
-import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
+import { IoAddCircleOutline, IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape } from "react-icons/io5";
 import { FaClipboardList, FaFilter, FaRegCalendar } from "react-icons/fa";
 import { BsStickyFill } from "react-icons/bs";
 import { CiFilter } from "react-icons/ci";
-import { Menu, MenuItem, Checkbox, Button, ListItemText } from "@mui/material";
+import { Menu, MenuItem, Checkbox, Button, ListItemText, Slider } from "@mui/material";
 import { format } from 'date-fns';
 import { fr } from "date-fns/locale/fr";
 import toast from "react-hot-toast";
@@ -31,6 +31,9 @@ import 'chart.js/auto';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { HiOutlineBuildingOffice } from "react-icons/hi2";
+import { Accordion } from "@/components/Accordion";
+import { FiEdit3 } from "react-icons/fi";
+import Modal from '@mui/material/Modal'
 
 ChartJS.register(
   CategoryScale,
@@ -44,6 +47,7 @@ ChartJS.register(
 
 const Home = () => {
   const url = `/appointment/stats`;
+  const timeUrl = `/time`;
   const axiosAuth = useAxiosAuth();
   const now = new Date();
   now.setHours(0, 0, 0, 0);
@@ -53,8 +57,20 @@ const Home = () => {
   const [officeId, setOfficeId] = useState(1)
   const [formattedStartDate, setFormattedStartDate] = useState('');
   const [formattedEndDate, setFormattedEndDate] = useState('');
+  const [openEditTime, setOpenEditTime] = useState(false);
+  const [openTime, setOpenTime] = useState(false);
+
+  const time: Time = {
+    id: 0,
+    createdAt: new Date(),
+    time: 0,
+    type: '',
+    updatedAt: new Date()
+  };
+  const [timeToUpdate, setTimeToUpdate] = useState(time);
   const { data: fetchedOffices, isLoading: officeLoading, error: officeError } = useSWR(officeUrl, () => axiosAuth.get<Office[]>(officeUrl).then((res) => res.data));
-  const { data: result, isLoading, error } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: [1] })).then((res) => res.data));
+  const { data: result, isLoading, error, mutate } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: [1] })).then((res) => res.data));
+  const { data: fetchedTimes, isLoading: timeLoading, mutate: mutateTimes } = useSWR(timeUrl, () => axiosAuth.get<Time[]>(timeUrl).then((res) => res.data));
   const useChangeTitle = useChangeHeaderTitle();
   const [currentDate, setCurrentDate] = useState('');
   const [officeName, setOfficeName] = useState('');
@@ -117,6 +133,7 @@ const Home = () => {
 
   const [filterStats, setFilterStats] = useState(emptyStats);
   const [filter, setFilter] = useState(false);
+  const [filterOffice, setFilterOffice] = useState(false);
   const [loading, setLoading] = useState(false);
   const [seeAll, setSeeAll] = useState(false);
   const [showTotal, setShowTotal] = useState(false);
@@ -129,6 +146,79 @@ const Home = () => {
   const openWeekMenuFilter = Boolean(anchorWeekElFilter);
   let emptyAppointments: Appointment[] = [];
   const [filterAppointments, setFilterAppointments] = useState(emptyAppointments);
+
+  const submitTime = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosAuth.post(timeUrl, JSON.stringify({ 'time': value, 'type': type }));
+      if (res.status == 201) {
+        toast.success('Opération réussie!', { duration: 3000, className: " text-xs" });
+        mutate();
+        mutateTimes();
+        handleCloseTime();
+      }
+    }
+    catch (error: any) {
+      console.log(error);
+
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  const updateTime = async () => {
+    try {
+      setLoading(true);
+      const res = await axiosAuth.put(timeUrl, JSON.stringify({ 'id': timeToUpdate.id, 'time': value }));
+      if (res.status == 200) {
+        toast.success('Opération réussie!', { duration: 3000, className: " text-xs" });
+        mutate();
+         mutateTimes();
+        handleCloseEditTime();
+      }
+    }
+    catch (error: any) {
+      console.log(error);
+
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+    }
+    finally {
+      setLoading(false);
+    }
+  }
+
+  const [value, setValue] = useState(0);
+  const [type, setType] = useState('');
+
+  const handleChange = (event: Event, newValue: number | number[]) => {
+
+    if (typeof newValue === 'number') {
+      setValue(newValue);
+    }
+  };
+
+
+
+  const handleOpenEditTime = (time: Time) => {
+    setTimeToUpdate(time);
+    setValue(time.time);
+    setOpenEditTime(true);
+  };
+
+  const handleOpenTime = (type: string) => {
+    setType(type)
+    setOpenTime(true);
+  };
+
+  const handleCloseTime = () => {
+    setOpenTime(false);
+  };
+
+  const handleCloseEditTime = () => {
+    setOpenEditTime(false);
+  };
 
   const [anchorMonthElFilter, setAnchorMonthElFilter] = useState(null);
   const openMonthMenuFilter = Boolean(anchorMonthElFilter);
@@ -165,6 +255,7 @@ const Home = () => {
 
     try {
       setFilter(true);
+      setFilterOffice(false);
       setLoading(true);
       setFilterTwoDate(false);
 
@@ -222,6 +313,7 @@ const Home = () => {
       setCurrentDate("Aujourd'hui");
       try {
         setFilter(true);
+        setFilterOffice(true);
         setLoading(true);
         const date = new Date(new Date().getTime());
         const hours = String(date.getUTCHours()).padStart(2, '0');
@@ -300,6 +392,7 @@ const Home = () => {
     try {
       setFilter(true);
       setFilterTwoDate(true);
+      setFilterOffice(false);
       setLoading(true);
       setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours ouvrés: ${differenceInDays}`);
       const res = await axiosAuth.post<Stats>(`${url}/week`, JSON.stringify({ start: start, end: end, ids: selectedOffices.length === 0 ? [officeId] : selectedOffices }));
@@ -769,194 +862,6 @@ const Home = () => {
     }
   }
 
-  const exportParticularDataToToExcel = async (name: string, title: string, header: any, list: any,) => {
-    if (filter == false) {
-      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
-    }
-    const data: any = [];
-    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
-    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
-    const meanTimeServiceTitle = { '': { v: title, s: titleStyle } };
-    const meanTimeServiceDescription = { '': { v: description, s: descriptionStyle } };
-    data.push(meanTimeServiceTitle, meanTimeServiceDescription);
-    const jump = { '': '' };
-    data.push(jump);
-    const serviceNames = header;
-
-    // En-tête des colonnes avec les noms des services
-    const headerRow: any = {};
-    serviceNames.forEach((name: string | number) => {
-      headerRow[name] = name;
-    });
-
-    data.push(headerRow);
-    const mTSData: any = {};
-    serviceNames.forEach((name: string | number) => {
-      const meanWaitingTime = list.find((item: { name: any; }) => item.name === name);
-      if (meanWaitingTime) {
-        mTSData[name] = meanWaitingTime.amount;
-      } else {
-        mTSData[name] = '00:00:00';
-      }
-    });
-
-    data.push(mTSData);
-    const mTWs = XLSX.utils.json_to_sheet(data, { skipHeader: true });
-    const appWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(appWb, mTWs, name);
-
-    // Convertir le classeur en tableau d'octets
-    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
-
-    // Créer un Blob à partir des données du classeur
-    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const appData = new Blob([appBuffer], { type: fileType });
-
-    // Télécharger le fichier
-    FileSaver.saveAs(appData, `${name}.xlsx`);
-  }
-
-  const exportMeanTimeDataToToExcel = async (name: string, title: string, header: any, list: any,) => {
-    if (filter == false) {
-      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
-    }
-    const meanTimeService: any = [];
-    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
-    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
-    const meanTimeServiceTitle = { '': { v: title, s: titleStyle } };
-    const meanTimeServiceDescription = { '': { v: description, s: descriptionStyle } };
-    meanTimeService.push(meanTimeServiceTitle, meanTimeServiceDescription);
-    const jump = { '': '' };
-    meanTimeService.push(jump);
-    const serviceNames = header;
-
-    // En-tête des colonnes avec les noms des services
-    const headerRow: any = {};
-    serviceNames.forEach((name: string | number) => {
-      headerRow[name] = name;
-    });
-
-    meanTimeService.push(headerRow);
-    const mTSData: any = {};
-    serviceNames.forEach((name: string | number) => {
-      const meanWaitingTime = list.find((item: { name: any; }) => item.name === name);
-      if (meanWaitingTime) {
-        mTSData[name] = format(meanWaitingTime.amount * 60 * 1000, 'HH:mm:ss');
-      } else {
-        mTSData[name] = '00:00:00';
-      }
-    });
-
-    meanTimeService.push(mTSData);
-    const mTWs = XLSX.utils.json_to_sheet(meanTimeService, { skipHeader: true });
-    const appWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(appWb, mTWs, name);
-
-    // Convertir le classeur en tableau d'octets
-    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
-
-    // Créer un Blob à partir des données du classeur
-    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const appData = new Blob([appBuffer], { type: fileType });
-
-    // Télécharger le fichier
-    FileSaver.saveAs(appData, `${name}.xlsx`);
-  }
-
-
-  const exportTicketsDataToExcel = async (name: string, title: string, list: any,) => {
-    if (filter == false) {
-      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
-    }
-    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
-    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
-    const serviceTitle = { '': { v: title, s: titleStyle } };
-    const serviceDescription = { '': { v: description, s: descriptionStyle } };
-    const subServices: any = [];
-    subServices.push(serviceTitle, serviceDescription);
-
-    for (let index = 0; index < list.appointmentsByService.length; index++) {
-      const element = list.appointmentsByService[index];
-      const serviceTitle = { '': { v: element.name, s: titleStyle } };
-      subServices.push(serviceTitle);
-      const newL = { '': '\n' };
-      subServices.push(newL);
-      const headers2 = {
-        'Reçu': 'Reçu',
-        'Traité': 'Traité',
-        'En attente': 'En attente'
-      };
-      subServices.push(headers2);
-      const data = {
-        'Reçu': element.amount ? element.amount : 0,
-        'Traité': list.serveAppointmentsByService[index]?.amount ? list.serveAppointmentsByService[index]?.amount : 0,
-        'En attente': list.waitingAppointmentsByService[index]?.amount ? list.waitingAppointmentsByService[index]?.amount : 0
-      };
-      subServices.push(data);
-    }
-
-    const mTWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
-    const appWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(appWb, mTWs, name);
-
-    // Convertir le classeur en tableau d'octets
-    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
-
-    // Créer un Blob à partir des données du classeur
-    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const appData = new Blob([appBuffer], { type: fileType });
-
-    // Télécharger le fichier
-    FileSaver.saveAs(appData, `${name}.xlsx`);
-  }
-
-  const exportTicketsBySubServiceDataToExcel = async (name: string, title: string, list: any,) => {
-    if (filter == false) {
-      setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
-    }
-    const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } };
-    const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } };
-    const serviceTitle = { '': { v: title, s: titleStyle } };
-    const serviceDescription = { '': { v: description, s: descriptionStyle } };
-    const subServices: any = [];
-    subServices.push(serviceTitle, serviceDescription);
-
-    for (let index = 0; index < list.appointmentsBySubService.length; index++) {
-      const element = list.appointmentsBySubService[index];
-      const serviceTitle = { '': { v: element.name, s: titleStyle } };
-      subServices.push(serviceTitle);
-      const newL = { '': '\n' };
-      subServices.push(newL);
-      const headers2 = {
-        'Reçu': 'Reçu',
-        'Traité': 'Traité',
-        'En attente': 'En attente'
-      };
-      subServices.push(headers2);
-      const data = {
-        'Reçu': element.amount ? element.amount : 0,
-        'Traité': list.serveAppointmentsBySubService[index]?.amount ? list.serveAppointmentsBySubService[index]?.amount : 0,
-        'En attente': list.waitingAppointmentsBySubService[index]?.amount ? list.waitingAppointmentsBySubService[index]?.amount : 0
-      };
-      subServices.push(data);
-    }
-
-
-    const mTWs = XLSX.utils.json_to_sheet(subServices, { skipHeader: true });
-    const appWb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(appWb, mTWs, name);
-
-    // Convertir le classeur en tableau d'octets
-    const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
-
-    // Créer un Blob à partir des données du classeur
-    const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    const appData = new Blob([appBuffer], { type: fileType });
-
-    // Télécharger le fichier
-    FileSaver.saveAs(appData, `${name}.xlsx`);
-  }
-
   const exportTableDataToExcel = async (name: string, title: string, list: any,) => {
     if (filter == false) {
       setDescription(`Ceci represente l'ensemble des données pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`)
@@ -1049,7 +954,7 @@ const Home = () => {
     return pendingTicketsByHourSlot;
   }
 
-  if (isLoading || loading || !result || officeLoading) {
+  if (isLoading || loading || !result || officeLoading || timeLoading) {
     return <Loader />
   }
 
@@ -1189,6 +1094,7 @@ const Home = () => {
           </Menu>
           <div className=" py-2 px-3 rounded-md bg-blue-200 flex items-center gap-2 text-xs font-semibold cursor-pointer" onClick={() => {
             setFilter(false);
+            setFilterOffice(false);
             setFilterTwoDate(false);
             const date = new Date(new Date().getTime());
             const hours = String(date.getUTCHours()).padStart(2, '0');
@@ -1219,6 +1125,48 @@ const Home = () => {
         <FaRegCalendar />
         <p className=" text-xs font-bold">{currentDate}</p>
       </div>
+
+      <Accordion title="Métriques">
+        {
+          fetchedTimes && fetchedTimes.map((time) => (
+            <>
+              {
+                time.type === "meanWaitingTime" &&
+                <div className=' my-4'>
+                  <p className=' text-sm font-semibold my-2'>Temps moyen d&apos;attente</p>
+                  <div className="flex gap-3 items-center">
+                    <p className=' text-xs'>Durée : {time.time} minutes</p>
+                    <FiEdit3 size={16} onClick={() => handleOpenEditTime(time)} className=" cursor-pointer hover:text-blue-500" />
+                  </div>
+                </div>
+              }
+              {
+                time.type === "meanServingTime" &&
+                <div className=' my-4'>
+                  <p className=' text-sm font-semibold my-2'>Temps moyen de traitement</p>
+                  <div className="flex gap-3 items-center">
+                    <p className=' text-xs'>Durée : {time.time} minutes</p>
+                    <FiEdit3 size={16} onClick={() => handleOpenEditTime(time)} className=" cursor-pointer hover:text-blue-500" />
+                  </div>
+                </div>
+              }
+              {
+                time.type === "minimalServingTime" &&
+                <div className=' my-4'>
+                  <p className=' text-sm font-semibold my-2'>Temps minimal de traitement</p>
+                  <div className="flex gap-3 items-center">
+                    <p className=' text-xs'>Durée : {time.time} minutes</p>
+                    <FiEdit3 size={16} onClick={() => handleOpenEditTime(time)} className=" cursor-pointer hover:text-blue-500" />
+                  </div>
+                </div>
+              }
+            </>
+          ))
+        }
+        {fetchedTimes && fetchedTimes.length == 0 && <button onClick={() => handleOpenTime("meanWaitingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4 '><IoAddCircleOutline size={20} /> Ajouter Le temps moyen d&apos;attente</button>}
+        {fetchedTimes && fetchedTimes.length < 2 && <button onClick={() => handleOpenTime("meanServingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4'><IoAddCircleOutline size={20} /> Ajouter Le temps moyen de traitement</button>}
+        {fetchedTimes && fetchedTimes.length < 3 && <button onClick={() => handleOpenTime("minimalServingTime")} className='  bg-black py-2 px-4 rounded-md text-white text-sm flex items-center gap-2 my-4'><IoAddCircleOutline size={20} /> Ajouter Le temps minimal de traitement</button>}
+      </Accordion>
       <h3 className=" font-bold">1-Synthèse</h3>
       <div className=" flex justify-center mt-12">
         <div className=" w-4 bg-black">
@@ -1498,8 +1446,7 @@ const Home = () => {
       <h3 className=" font-bold mb-4">2-Analyse par rapport aux services</h3>
       <div className=" flex justify-center gap-12 mb-7">
         <div className=" w-fit bg-white rounded pb-1">
-          <button onClick={() => exportMeanTimeDataToToExcel('waitingTimeByService', 'Temps moyen d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeByService : result.meanWaitingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <MdTimer size={30} className=" mx-auto" />
+          <MdTimer size={30} className=" mx-auto mt-1" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Attente moyenne</p>
           <div className="flex gap-4 justify-center my-2 px-2">
@@ -1521,8 +1468,7 @@ const Home = () => {
           </div>
         </div>
         <div className=" w-fit bg-white rounded pb-1">
-          <button onClick={() => exportMeanTimeDataToToExcel("meanServingTime", '', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeByService : result.meanServingTimeByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
-          <MdTimer size={30} className=" mx-auto" />
+          <MdTimer size={30} className=" mx-auto mt-1" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Traitement moyen</p>
           <div className="flex gap-4 justify-center my-2 px-2">
@@ -1547,7 +1493,6 @@ const Home = () => {
       </div>
       <div className=" mt-2 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
-          <button onClick={() => exportTicketsDataToExcel("allTicketsByService", "Nombre de tickets par Servic", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <h3 className=" text-center p-1">Visualisation de l&lsquo;affluence par service</h3>
           <Bar
             data={filter === false ? {
@@ -1638,6 +1583,15 @@ const Home = () => {
                   hoverBorderColor: 'rgba(0, 128, 0, 1)',
                   data: filterStats?.serveAppointmentsByService.map(record => record.amount), // Les données pour "Traité" pour chaque service
                 },
+                ...(filterOffice === true ? [{
+                  label: 'En attente',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filterStats?.waitingAppointmentsByService.map(record => record.amount) // Les données pour "En attente" pour chaque service
+                }] : []),
                 {
                   label: 'Attente optimale',
                   backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
@@ -1684,8 +1638,7 @@ const Home = () => {
           />
         </div>
         <div className=" w-96">
-          <div className=" bg-white rounded pb-1">
-            <button onClick={() => exportParticularDataToToExcel("inOptimalWaitingTimeByService", 'Le nombre de ticket dans le temps optimal d\'attente par service', filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingByService : result.totatlInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded pb-1 pt-1">
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Attente optimale</p>
@@ -1709,8 +1662,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1 my-7">
-            <button onClick={() => exportParticularDataToToExcel("notInOptimalWaitingTimeByService", "Le nombre de ticket en dehors du temps optimal d'attente par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingByService : result.totatlNotInWaitingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded pb-1 my-7 pt-1">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Attente non optimale</p>
             <div className="flex gap-4 justify-center my-2 px-2">
@@ -1732,8 +1685,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1">
-            <button onClick={() => exportParticularDataToToExcel("inOptimalServingTimeByService", "Le nombre de ticket dans le temps optimal de traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingByService : result.totatlInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded pb-1 pt-1">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Traitement optimal</p>
             <div className="flex gap-4 justify-center my-2 px-2">
@@ -1755,8 +1708,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1 my-7">
-            <button onClick={() => exportParticularDataToToExcel("notInOptimalServingTimeByService", "Le nombre de ticket en dehors du temps optimal traitement par service", filter ? filterStats.appointmentsByService.map((service: { name: any; }) => service.name) : result.appointmentsByService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingByService : result.totatlNotInServingByService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded pb-1 my-7 pt-1">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Traitement non optimal</p>
             <div className="flex gap-4 justify-center my-2 px-2">
@@ -1878,8 +1831,7 @@ const Home = () => {
       </div>
 
       <div className=" flex justify-center gap-12 my-7">
-        <div className=" w-fit bg-white rounded pb-1">
-          <button onClick={() => exportMeanTimeDataToToExcel("meanWTimeByService", "Temps moyen d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanWaitingTimeBySubService : result.meanWaitingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+        <div className=" w-fit bg-white rounded py-1">
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Attente moyenne</p>
@@ -1902,8 +1854,7 @@ const Home = () => {
             }
           </div>
         </div>
-        <div className=" w-fit bg-white rounded pb-1">
-          <button onClick={() => exportMeanTimeDataToToExcel("meanPTimeByService", "Temps moyen de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.meanServingTimeBySubService : result.meanServingTimeBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+        <div className=" w-fit bg-white rounded py-1">
           <MdTimer size={30} className=" mx-auto" />
           <hr className=" w-8 mx-auto my-3" />
           <p className=" text-center">Traitement moyen </p>
@@ -1929,7 +1880,6 @@ const Home = () => {
       </div>
       <div className=" mt-8 flex justify-center items-start gap-5">
         <div className=" w-2/3 h-screen pb-14 bg-white rounded overflow-hidden">
-          <button onClick={() => exportTicketsBySubServiceDataToExcel("allTicketsBySubService", "Nombre de tickets par Point d'appel", filter ? filterStats : result)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
           <h3 className=" text-center p-1">Visualisation de l&apos;affluence point d&apos;appel</h3>
           <Bar
             data={filter === false ? {
@@ -2020,6 +1970,15 @@ const Home = () => {
                   hoverBorderColor: 'rgba(0, 128, 0, 1)',
                   data: filterStats?.serveAppointmentsBySubService.map(record => record.amount), // Les données pour "Traité" pour chaque service
                 },
+                ...(filterOffice === true ? [{
+                  label: 'En attente',
+                  backgroundColor: 'rgba(255, 0, 0, 0.8)', // Rouge pour "En attente"
+                  borderColor: 'rgba(255, 0, 0, 1)',
+                  borderWidth: 1,
+                  hoverBackgroundColor: 'rgba(255, 0, 0, 0.8)',
+                  hoverBorderColor: 'rgba(255, 0, 0, 1)',
+                  data: filterStats?.waitingAppointmentsBySubService.map(record => record.amount) // Les données pour "En attente" pour chaque service
+                }] : []),
                 {
                   label: 'Attente optimale',
                   backgroundColor: 'rgba(58, 252, 193, 0.8)', // Rouge pour "En attente"
@@ -2067,8 +2026,7 @@ const Home = () => {
           />
         </div>
         <div className=" w-fit">
-          <div className=" bg-white rounded pb-1">
-            <button onClick={() => exportParticularDataToToExcel("inOptWTimeBySubService", "Le nombre de ticket dans le temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInWaitingBySubService : result.totatlInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded py-1">
             <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Attente optimale</p>
@@ -2091,8 +2049,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1 my-7">
-            <button onClick={() => exportParticularDataToToExcel("notInOptWTimeBySubService", "Le nombre de ticket en dehors du temps optimal d'attente par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInWaitingBySubService : result.totatlNotInWaitingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded py-1 my-7">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Attente non optimale</p>
             <div className="flex gap-4 justify-center my-2">
@@ -2115,8 +2073,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1">
-            <button onClick={() => exportParticularDataToToExcel("inOptSTimeBySubService", "Le nombre de ticket dans le temps optimal de traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlInServingBySubService : result.totatlInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded py-1">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Traitement optimal</p>
             <div className="flex gap-4 justify-center my-2">
@@ -2139,8 +2097,8 @@ const Home = () => {
             </div>
           </div>
 
-          <div className=" bg-white rounded pb-1 my-7">
-            <button onClick={() => exportParticularDataToToExcel("notInOptSTimeBySubService", "Le nombre de ticket en dehors du temps optimal traitement par point d'appel", filter ? filterStats.appointmentsBySubService.map((service: { name: any; }) => service.name) : result.appointmentsBySubService.map((service: { name: any; }) => service.name), filter ? filterStats.totatlNotInServingBySubService : result.totatlNotInServingBySubService)} className=" bg-green-700 rounded-md py-1 px-2 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+          <div className=" bg-white rounded py-1 my-7">
+            <MdTimer size={30} className=" mx-auto" />
             <hr className=" w-8 mx-auto my-3" />
             <p className=" text-center">Traitement non optimal</p>
             <div className="flex gap-4 justify-center my-2">
@@ -2373,13 +2331,13 @@ const Home = () => {
                   {appointment.Subservice.name}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                  {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span >00.00.00</span>}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                  {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2449,13 +2407,13 @@ const Home = () => {
                       {appointment.Subservice.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                      {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span >00.00.00</span>}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                      {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2486,13 +2444,13 @@ const Home = () => {
                       {appointment.Subservice.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                      {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span >00.00.00</span>}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                      {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2605,13 +2563,13 @@ const Home = () => {
                               {appointment.Subservice.name}
                             </td>
                             <td className=' text-xs opacity-60'>
-                              {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                              {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span >00.00.00</span>}
                             </td>
                             <td className=' text-xs opacity-60'>
                               {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                             </td>
                             <td className=' text-xs opacity-60'>
-                              {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                              {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                             </td>
                             <td className=' text-xs opacity-60'>
                               {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2684,13 +2642,13 @@ const Home = () => {
                             {appointment.Subservice.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                            {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span >00.00.00</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.received ? <span className=" font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2724,13 +2682,13 @@ const Home = () => {
                             {appointment.Subservice.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
+                            {appointment.callTime !== null ? appointment.callTime : <span>00.00.00</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.received ? <span className=" font-bold text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
+                            {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span >00.00.00</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.transfered ? <p>Oui</p> : <p>Non</p>}
@@ -2802,7 +2760,6 @@ const Home = () => {
                 <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Tickets Sautés</th>
                 <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Attente Moyen</th>
                 <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Ttraitement Moyen</th>
-
               </tr>
             </thead>
             {
@@ -2843,6 +2800,65 @@ const Home = () => {
           </table>
         </div>
       }
+
+      <Modal
+        open={openTime}
+        onClose={handleCloseTime}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+      >
+        <div className=' w-1/4 bg-white p-4  rounded-lg mx-auto my-12'>
+          <p className=' text-sm font-semibold py-2'>Temps</p>
+          <div style={{ width: 300, margin: 'auto' }}>
+            <p className=' text-xs font-medium'>Choisissez un temps</p>
+            <Slider
+              value={value}
+              onChange={handleChange}
+              aria-labelledby="discrete-slider"
+              valueLabelDisplay="auto"
+              step={1}
+              marks
+              min={1}
+              max={180}
+              className=' text-black'
+            />
+            <p className=' text-xs'>{value} minutes</p>
+
+          </div>
+          <div className=' py-4 flex items-center justify-center gap-3'>
+            <button className=' w-full bg-black hover:bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={submitTime}>Soumettre</button>
+          </div>
+        </div>
+      </Modal>
+      <Modal
+        open={openEditTime}
+        onClose={handleCloseEditTime}
+        aria-labelledby="simple-modal-title"
+        aria-describedby="simple-modal-description"
+      >
+        <div className=' w-1/4 bg-white p-4  rounded-lg mx-auto my-12'>
+          <p className=' text-sm font-semibold py-2'>Modifier Temps</p>
+          <div style={{ width: 300, margin: 'auto' }}>
+            <p className=' text-xs font-medium'>Choisissez un temps</p>
+            <Slider
+              value={value}
+              onChange={handleChange}
+              aria-labelledby="discrete-slider"
+              valueLabelDisplay="auto"
+              step={1}
+              marks
+              min={1}
+              max={180}
+              className=' text-black'
+            />
+            <p className=' text-xs'>{value} minutes</p>
+
+          </div>
+          <div className=' py-4 flex items-center justify-center gap-3'>
+            <button className=' w-full bg-black hover:bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={updateTime}>Soumettre</button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

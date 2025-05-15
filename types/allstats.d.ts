@@ -9,6 +9,7 @@ interface AllStats {
     months: string[];
     weeks: string[];
     years: string[];
+    totalByOffices: any[];
 }
 
 interface Rec {

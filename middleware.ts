@@ -41,6 +41,7 @@ export default withAuth(
 
     const adminOfficeRoutes = [
       "/office",
+      "/home/alert",
       "/home/settings"
     ];
 
