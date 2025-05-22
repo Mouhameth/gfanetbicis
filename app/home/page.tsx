@@ -1258,7 +1258,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : filterTwoDate? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss'): format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Attente moyenne
@@ -1271,7 +1271,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : filterTwoDate? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss'): format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Traitement moyen
@@ -1420,10 +1420,10 @@ const Home = () => {
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) /filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-2/12 text-xs py-3  text-center'>
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.inwaitings, 0)}</p>
