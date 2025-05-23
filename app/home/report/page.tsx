@@ -723,7 +723,7 @@ const Report = () => {
                         <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
                         {
                             result.appointmentsByHourSlot[0].data.map((office) => (
-                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
                             ))
                         }
                         <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
@@ -737,7 +737,7 @@ const Report = () => {
                             </td>
                             {
                                 appointment.data.map((office) => (
-                                    <td className=' text-xs opacity-60'>
+                                    <td key={office.name} className=' text-xs opacity-60'>
                                         {office.amount}
                                     </td>
                                 ))
@@ -783,7 +783,7 @@ const Report = () => {
                                 </td>
                                 {
                                     appointment.data.map((office) => (
-                                        <td className=' text-xs opacity-60'>
+                                        <td key={office.name} className=' text-xs opacity-60'>
                                             {office.amount}
                                         </td>
                                     ))
@@ -831,7 +831,7 @@ const Report = () => {
                         <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
                         {
                             result.appointmentsByHourSlot[0].data.map((office) => (
-                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
                             ))
                         }
                         <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
@@ -845,7 +845,7 @@ const Report = () => {
                             </td>
                             {
                                 appointment.data.map((office) => (
-                                    <td className=' text-xs opacity-60'>
+                                    <td key={office.name} className=' text-xs opacity-60'>
                                         {office.amount}
                                     </td>
                                 ))
@@ -891,7 +891,7 @@ const Report = () => {
                         <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
                         {
                             result.servingAppointmentsByHourSlot[0].data.map((office) => (
-                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
                             ))
                         }
                         <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
@@ -905,7 +905,7 @@ const Report = () => {
                             </td>
                             {
                                 appointment.data.map((office) => (
-                                    <td className=' text-xs opacity-60'>
+                                    <td key={office.name} className=' text-xs opacity-60'>
                                         {office.amount}
                                     </td>
                                 ))
@@ -951,7 +951,7 @@ const Report = () => {
                                 </td>
                                 {
                                     appointment.data.map((office) => (
-                                        <td className=' text-xs opacity-60'>
+                                        <td key={office.name} className=' text-xs opacity-60'>
                                             {office.amount}
                                         </td>
                                     ))
