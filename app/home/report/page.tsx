@@ -54,11 +54,30 @@ const Report = () => {
     const useChangeTitle = useChangeHeaderTitle();
     const [currentDate, setCurrentDate] = useState('');
     const [description, setDescription] = useState('');
+    const [waitingAppointmentsOfficeByHourSlot, setWaitingAppointmentsOfficeByHourSlot] = useState<Slot[]>([]);
+
     useEffect(() => {
         useChangeTitle.onChanged("Tableau de bord");
-        setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+    }, []); // Exécuté une seule fois au montage
+
+    useEffect(() => {
+        // Formatage de la date actuelle
+        const today = new Date();
+        const formattedDate = format(today, 'EEEE dd MMMM yyyy', { locale: fr });
+
+        setCurrentDate(`Aujourd'hui : ${formattedDate}`);
         setFormattedStartDate(format(startDate, 'dd/MM/yyyy'));
-        setDescription(`Ceci represente l'ensemble des données pour toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+        setDescription(`Ceci represente l'ensemble des données pour toutes les agences pour la date d'aujourd'hui ${today.toLocaleDateString('fr-FR')}`);
+    }, [startDate]); // Dépend de startDate
+
+    useEffect(() => {
+        if (result?.appointmentsByHourSlot && result?.servingAppointmentsByHourSlot) {
+            setWaitingAppointmentsOfficeByHourSlot(
+                calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot)
+            );
+        } else {
+            setWaitingAppointmentsOfficeByHourSlot([]);
+        }
     }, [result]);
 
     const emptyStats: AllStats = {
@@ -72,7 +91,9 @@ const Report = () => {
         years: [],
         offices: 0,
         totalAppointments: 0,
-        totalByOffices: []
+        totalByOffices: [],
+        appointmentsByHourSlot: [],
+        servingAppointmentsByHourSlot: []
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
@@ -123,6 +144,7 @@ const Report = () => {
             const res = await axiosAuth.post<AllStats>(url, JSON.stringify({ date: date }));
             if (res.status == 200) {
                 setFilterStats(res.data);
+                setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(res.data.appointmentsByHourSlot, res.data.servingAppointmentsByHourSlot));
             }
         } catch (error) {
             setFilter(false);
@@ -143,6 +165,7 @@ const Report = () => {
             const res = await axiosAuth.post<AllStats>(`${url}/range`, JSON.stringify({ start: start, end: end }));
             if (res.status == 200) {
                 setFilterStats(res.data);
+                setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(res.data.appointmentsByHourSlot, res.data.servingAppointmentsByHourSlot));
             }
         } catch (error) {
             setFilter(false);
@@ -176,6 +199,60 @@ const Report = () => {
 
     const handleCloseRangeMenuFilter = () => {
         setAnchorRangeElFilter(null);
+    };
+
+    const calculateWaitings = (receives: Slot[], serves: Slot[]): Slot[] => {
+        const waitings: Slot[] = [];
+
+        // Map pour stocker les waitings accumulés par bureau
+        const accumulatedWaitings: Map<string, number> = new Map();
+
+        // Parcourir chaque créneau horaire dans l'ordre chronologique
+        receives.forEach(receiveSlot => {
+            // Trouver le créneau correspondant dans les servis
+            const serveSlot = serves.find(s => s.time === receiveSlot.time);
+
+            // Calculer le total des reçus pour cette heure
+            const totalReceived = receiveSlot.data.reduce((sum, office) => sum + office.amount, 0);
+
+            // Calculer le total des servis pour cette heure
+            const totalServed = serveSlot?.data.reduce((sum, office) => sum + office.amount, 0) || 0;
+
+            // Si aucune activité (0 reçus ET 0 servis), ne pas afficher cette heure
+            if (totalReceived === 0 && totalServed === 0) {
+                return; // Passer à l'heure suivante
+            }
+
+            const waitingData: Rec[] = receiveSlot.data.map(receiveOffice => {
+                // Récupérer les waitings accumulés de l'heure précédente
+                const previousWaitings = accumulatedWaitings.get(receiveOffice.name) || 0;
+
+                // Trouver combien ont été servis cette heure
+                const serveOffice = serveSlot?.data.find(s => s.name === receiveOffice.name);
+                const servedThisHour = serveOffice?.amount || 0;
+
+                // Calcul : waitings précédents + nouveaux reçus - servis cette heure
+                const currentWaitings = previousWaitings + receiveOffice.amount - servedThisHour;
+
+                // S'assurer que les waitings ne deviennent pas négatifs
+                const finalWaitings = Math.max(0, currentWaitings);
+
+                // Mettre à jour les waitings accumulés pour la prochaine heure
+                accumulatedWaitings.set(receiveOffice.name, finalWaitings);
+
+                return {
+                    name: receiveOffice.name,
+                    amount: finalWaitings
+                };
+            });
+
+            waitings.push({
+                time: receiveSlot.time,
+                data: waitingData
+            });
+        });
+
+        return waitings;
     };
 
     const exportToExcel = async () => {
@@ -403,6 +480,7 @@ const Report = () => {
                         setFilter(false);
                         setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
                         setDescription(`Ceci represente l'ensemble des données de toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+                        setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot));
                     }}>
                         <IoReload />
                         <p>Aujourd&rsquo;hui</p>
@@ -416,7 +494,7 @@ const Report = () => {
                 <FaRegCalendar />
                 <p className=" text-xs font-bold">{currentDate}</p>
             </div>
-            <h3 className=" font-bold">1-Synthèse</h3>
+            <h3 className=" font-bold">1- Synthèse</h3>
             <div className=" flex justify-center mt-6">
                 <div className=" w-4 bg-black">
                 </div>
@@ -475,7 +553,7 @@ const Report = () => {
                     </div>
                 </div>
             </div>
-            <h3 className=" font-bold mt-8">2-Visualisation du flux des clients par Site</h3>
+            <h3 className=" font-bold mt-8">2- Visualisation du flux des clients par Site</h3>
             {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
                 <Line data={{
                     labels: result?.appointmentsByOffice.map(record => record.name),
@@ -528,7 +606,7 @@ const Report = () => {
                     }} />
                 </div>
             }
-            <h3 className=" font-bold mt-8">3-Pourcentage des clients par Site</h3>
+            <h3 className=" font-bold mt-8">3- Pourcentage des clients par Site</h3>
             {
                 filter == false ?
                     <div className="w-full h-1/3 flex justify-center bg-white rounded-md p-4 my-4">
@@ -561,7 +639,7 @@ const Report = () => {
                         />
                     </div>
             }
-            <h3 className=" font-bold my-4">4-Tableau comparatif général des agences</h3>
+            <h3 className=" font-bold my-4">4- Tableau comparatif général des agences</h3>
             <table className="w-full table-fixed">
                 <thead>
                     <tr className=" bg-black">
@@ -571,37 +649,347 @@ const Report = () => {
                         <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Temps Moyen de Ttraitement %</th>
                     </tr>
                 </thead>
-                {
+                {filter == false ? <> {
                     result.totalByOffices?.map((appointment) => (
                         <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                             <td className='text-xs py-2 px-1 font-semibold'>
                                 {appointment.name}
                             </td>
                             <td className=' text-xs opacity-60'>
-                                {((appointment.receives/result.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                                {((appointment.receives / result.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
                             </td>
                             <td className=' text-xs opacity-60'>
-                                {((appointment.meanWaitingTime/result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100).toFixed(1)}%
+                                {((appointment.meanWaitingTime / result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100).toFixed(1)}%
                             </td>
                             <td className=' text-xs opacity-60'>
-                                {((appointment.meanServingTime/result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100).toFixed(1)}%
+                                {((appointment.meanServingTime / result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100).toFixed(1)}%
                             </td>
                         </tr>
                     ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalByOffices?.reduce((total, item) => total + item.receives, 0) / result.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0) / result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0) / result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100}%
+                        </td>
+                    </tr>
+                </> : <>
+                    {
+                        filterStats.totalByOffices?.map((appointment) => (
+                            <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className='text-xs py-2 px-1 font-semibold'>
+                                    {appointment.name}
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.receives / filterStats.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.meanWaitingTime / filterStats.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.meanServingTime / filterStats.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100).toFixed(1)}%
+                                </td>
+                            </tr>
+                        ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalByOffices?.reduce((total, item) => total + item.receives, 0) / filterStats.totalByOffices?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0) / filterStats.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0) / filterStats.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)) * 100}%
+                        </td>
+                    </tr>
+                </>
+                }
+            </table>
+
+            <h3 className=" font-bold my-4">5- Tableau comparatif général des affluences</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                        {
+                            result.appointmentsByHourSlot[0].data.map((office) => (
+                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                            ))
+                        }
+                        <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                    </tr>
+                </thead>
+                {result.appointmentsByHourSlot.length > 0 && filter == false ? <> {
+                    result.appointmentsByHourSlot.map((appointment) => (
+                        <tr key={appointment.time} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.time}
+                            </td>
+                            {
+                                appointment.data.map((office) => (
+                                    <td className=' text-xs opacity-60'>
+                                        {office.amount}
+                                    </td>
+                                ))
+                            }
+                            <td className=' text-xs px-3 bg-green-500 text-white'>
+                                {appointment.data.reduce((total, item) => total + item.amount, 0)}
+                            </td>
+                        </tr>
+                    ))
+                }
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        {result.appointmentsByHourSlot[0].data.map((office, index) => {
+                            const total = result.appointmentsByHourSlot.reduce((sum, item) => {
+                                return sum + item.data[index].amount;
+                            }, 0);
+
+                            return (
+                                <td key={index} className='text-xs text-white'>
+                                    {total}
+                                </td>
+                            );
+                        })}
+                        {
+                            <td className='text-xs px-3 text-white'>
+                                {
+                                    result.appointmentsByHourSlot.reduce((sum, hourSlot) => {
+                                        return sum + hourSlot.data.reduce((s, office) => s + office.amount, 0);
+                                    }, 0)
+                                }
+                            </td>
+                        }
+
+                    </tr>
+                </> : <>
+                    {
+                        filterStats.appointmentsByHourSlot.map((appointment) => (
+                            <tr key={appointment.time} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className='text-xs py-2 px-1 font-semibold'>
+                                    {appointment.time}
+                                </td>
+                                {
+                                    appointment.data.map((office) => (
+                                        <td className=' text-xs opacity-60'>
+                                            {office.amount}
+                                        </td>
+                                    ))
+                                }
+                                <td className=' text-xs px-3 bg-green-500 text-white'>
+                                    {appointment.data.reduce((total, item) => total + item.amount, 0)}
+                                </td>
+                            </tr>
+                        ))
+                    }
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        {filterStats.appointmentsByHourSlot[0].data.map((office, index) => {
+                            const total = filterStats.appointmentsByHourSlot.reduce((sum, item) => {
+                                return sum + item.data[index].amount;
+                            }, 0);
+
+                            return (
+                                <td key={index} className='text-xs text-white'>
+                                    {total}
+                                </td>
+                            );
+                        })}
+                        {
+                            <td className='text-xs px-3 text-white'>
+                                {
+                                    filterStats.appointmentsByHourSlot.reduce((sum, hourSlot) => {
+                                        return sum + hourSlot.data.reduce((s, office) => s + office.amount, 0);
+                                    }, 0)
+                                }
+                            </td>
+                        }
+
+                    </tr>
+                </>
+                }
+            </table>
+
+            <h3 className=" font-bold my-4">6- Tableau comparatif général des attentes</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                        {
+                            result.appointmentsByHourSlot[0].data.map((office) => (
+                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                            ))
+                        }
+                        <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                    </tr>
+                </thead>
+                {
+                    waitingAppointmentsOfficeByHourSlot.length > 0 && waitingAppointmentsOfficeByHourSlot.map((appointment) => (
+                        <tr key={appointment.time} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.time}
+                            </td>
+                            {
+                                appointment.data.map((office) => (
+                                    <td className=' text-xs opacity-60'>
+                                        {office.amount}
+                                    </td>
+                                ))
+                            }
+                            <td className=' text-xs px-3 bg-green-500 text-white'>
+                                {appointment.data.reduce((total, item) => total + item.amount, 0)}
+                            </td>
+                        </tr>
+                    ))
+                }
                 <tr className="bg-green-600 text-white ">
                     <td className='text-xs py-2 px-3 font-semibold'>
                         Total
                     </td>
-                    <td className=' text-xs'>
-                        {(result.totalByOffices?.reduce((total, item) => total + item.receives, 0)/result.totalByOffices?.reduce((total, item) => total + item.receives, 0))*100}%
-                    </td>
-                    <td className=' text-xs'>
-                        {(result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0)/result.totalByOffices?.reduce((total, item) => total + item.meanWaitingTime, 0))*100}%
-                    </td>
-                    <td className=' text-xs'>
-                        {(result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0)/result.totalByOffices?.reduce((total, item) => total + item.meanServingTime, 0))*100}%
-                    </td>
+                    {waitingAppointmentsOfficeByHourSlot.length > 0 && waitingAppointmentsOfficeByHourSlot[0].data.map((office, index) => {
+                        const total = waitingAppointmentsOfficeByHourSlot.reduce((sum, item) => {
+                            return sum + item.data[index].amount;
+                        }, 0);
+
+                        return (
+                            <td key={index} className='text-xs text-white'>
+                                {total}
+                            </td>
+                        );
+                    })}
+                    {
+                        <td className='text-xs px-3 text-white'>
+                            {
+                                waitingAppointmentsOfficeByHourSlot.reduce((sum, hourSlot) => {
+                                    return sum + hourSlot.data.reduce((s, office) => s + office.amount, 0);
+                                }, 0)
+                            }
+                        </td>
+                    }
+
                 </tr>
+            </table>
+
+            <h3 className=" font-bold my-4">7- Tableau comparatif général des traitements</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                        {
+                            result.servingAppointmentsByHourSlot[0].data.map((office) => (
+                                <th className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                            ))
+                        }
+                        <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                    </tr>
+                </thead>
+                {result.servingAppointmentsByHourSlot.length > 0 && filter == false ? <> {
+                    result.servingAppointmentsByHourSlot.map((appointment) => (
+                        <tr key={appointment.time} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.time}
+                            </td>
+                            {
+                                appointment.data.map((office) => (
+                                    <td className=' text-xs opacity-60'>
+                                        {office.amount}
+                                    </td>
+                                ))
+                            }
+                            <td className=' text-xs px-3 bg-green-500 text-white'>
+                                {appointment.data.reduce((total, item) => total + item.amount, 0)}
+                            </td>
+                        </tr>
+                    ))
+                }
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        {result.servingAppointmentsByHourSlot[0].data.map((office, index) => {
+                            const total = result.servingAppointmentsByHourSlot.reduce((sum, item) => {
+                                return sum + item.data[index].amount;
+                            }, 0);
+
+                            return (
+                                <td key={index} className='text-xs text-white'>
+                                    {total}
+                                </td>
+                            );
+                        })}
+                        {
+                            <td className='text-xs px-3 text-white'>
+                                {
+                                    result.servingAppointmentsByHourSlot.reduce((sum, hourSlot) => {
+                                        return sum + hourSlot.data.reduce((s, office) => s + office.amount, 0);
+                                    }, 0)
+                                }
+                            </td>
+                        }
+
+                    </tr>
+                </> : <>
+                    {
+                        filterStats.servingAppointmentsByHourSlot.map((appointment) => (
+                            <tr key={appointment.time} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className='text-xs py-2 px-1 font-semibold'>
+                                    {appointment.time}
+                                </td>
+                                {
+                                    appointment.data.map((office) => (
+                                        <td className=' text-xs opacity-60'>
+                                            {office.amount}
+                                        </td>
+                                    ))
+                                }
+                                <td className=' text-xs px-3 bg-green-500 text-white'>
+                                    {appointment.data.reduce((total, item) => total + item.amount, 0)}
+                                </td>
+                            </tr>
+                        ))
+                    }
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        {filterStats.servingAppointmentsByHourSlot[0].data.map((office, index) => {
+                            const total = filterStats.servingAppointmentsByHourSlot.reduce((sum, item) => {
+                                return sum + item.data[index].amount;
+                            }, 0);
+
+                            return (
+                                <td key={index} className='text-xs text-white'>
+                                    {total}
+                                </td>
+                            );
+                        })}
+                        {
+                            <td className='text-xs px-3 text-white'>
+                                {
+                                    filterStats.servingAppointmentsByHourSlot.reduce((sum, hourSlot) => {
+                                        return sum + hourSlot.data.reduce((s, office) => s + office.amount, 0);
+                                    }, 0)
+                                }
+                            </td>
+                        }
+
+                    </tr>
+                </>
+                }
             </table>
         </div>
     )

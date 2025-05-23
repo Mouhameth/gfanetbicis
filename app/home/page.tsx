@@ -54,7 +54,7 @@ const Home = () => {
   const officeUrl = `/office`;
   const [startDate, setStartDate] = useState(new Date());
   const [endDate, setEndDate] = useState(null);
-  const [officeId, setOfficeId] = useState(1)
+  const [officeId, setOfficeId] = useState(17);
   const [formattedStartDate, setFormattedStartDate] = useState('');
   const [formattedEndDate, setFormattedEndDate] = useState('');
   const [openEditTime, setOpenEditTime] = useState(false);
@@ -69,7 +69,7 @@ const Home = () => {
   };
   const [timeToUpdate, setTimeToUpdate] = useState(time);
   const { data: fetchedOffices, isLoading: officeLoading, error: officeError } = useSWR(officeUrl, () => axiosAuth.get<Office[]>(officeUrl).then((res) => res.data));
-  const { data: result, isLoading, error, mutate } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: [1] })).then((res) => res.data));
+  const { data: result, isLoading, error, mutate } = useSWR(`${url}`, () => axiosAuth.post<Stats>(url, JSON.stringify({ date: now.toLocaleDateString('fr-FR'), ids: [17] })).then((res) => res.data));
   const { data: fetchedTimes, isLoading: timeLoading, mutate: mutateTimes } = useSWR(timeUrl, () => axiosAuth.get<Time[]>(timeUrl).then((res) => res.data));
   const useChangeTitle = useChangeHeaderTitle();
   const [currentDate, setCurrentDate] = useState('');
@@ -84,7 +84,8 @@ const Home = () => {
     setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
     setFormattedStartDate(format(startDate, 'dd/MM/yyyy'));
     if (fetchedOffices && fetchedOffices.length > 0) {
-      setOfficeName(fetchedOffices![0].name)
+      const office = fetchedOffices.find((office) => office.id === officeId);
+      setOfficeName(office!.name)
     }
     setDescription(`Ceci represente l'ensemble des données pour l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')} à ${pickedTime}`);
   }, [result, fetchedOffices]);
@@ -138,6 +139,7 @@ const Home = () => {
   const [seeAll, setSeeAll] = useState(false);
   const [showTotal, setShowTotal] = useState(false);
   const [filterTwoDate, setFilterTwoDate] = useState(false);
+  const [filterBetween, setFilterBetween] = useState(false);
   const [description, setDescription] = useState('');
   const [filterAsc, setFilterAsc] = useState(false);
   const [anchorOfficeElFilter, setAnchorOfficeElFilter] = useState(null);
@@ -175,7 +177,7 @@ const Home = () => {
       if (res.status == 200) {
         toast.success('Opération réussie!', { duration: 3000, className: " text-xs" });
         mutate();
-         mutateTimes();
+        mutateTimes();
         handleCloseEditTime();
       }
     }
@@ -258,6 +260,7 @@ const Home = () => {
       setFilterOffice(false);
       setLoading(true);
       setFilterTwoDate(false);
+      setFilterBetween(false);
 
       setCurrentDate(`L'année ${date}`);
       if (date.split('/').length === 2) {
@@ -286,6 +289,7 @@ const Home = () => {
   const handleFilterOffice = async () => {
     if (selectedOffices.length > 0) {
       setFilterTwoDate(false);
+      setFilterBetween(false);
       if (selectedOffices.length === 1) {
         const office = fetchedOffices!.find((office) => office.id === selectedOffices[0]);
         setOfficeId(office!.id);
@@ -1087,6 +1091,7 @@ const Home = () => {
                   handleFilter(formattedStartDate);
                 } else {
                   handleCloseRangeMenuFilter();
+                  setFilterBetween(true);
                   handleWeekFilter(formattedStartDate, formattedEndDate);
                 }
               }} className=" w-full bg-black text-xs text-white py-2 rounded-md hover:bg-green-500">Valider</button>
@@ -1096,15 +1101,17 @@ const Home = () => {
             setFilter(false);
             setFilterOffice(false);
             setFilterTwoDate(false);
+            setFilterBetween(false);
             const date = new Date(new Date().getTime());
             const hours = String(date.getUTCHours()).padStart(2, '0');
             const minutes = String(date.getUTCMinutes()).padStart(2, '0');
             const seconds = String(date.getUTCSeconds()).padStart(2, '0');
             const pickedTime = `${hours}:${minutes}:${seconds}`;
             setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} à ${pickedTime}`);
-            setOfficeName(fetchedOffices![0].name);
+            const office = fetchedOffices!.find((office) => office.id === officeId);
+            setOfficeName(office!.name)
             setDescription(`Ceci represente l'ensemble des données de l'agence ${officeName} pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
-            setOfficeId(fetchedOffices![0].id);
+            setOfficeId(17);
             setShowTotal(false);
             setSelectedOffices([]);
             setFilterAsc(false);
@@ -1258,7 +1265,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : filterTwoDate? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss'): format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Attente moyenne
@@ -1271,7 +1278,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : filterTwoDate? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss'): format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Traitement moyen
@@ -1368,7 +1375,7 @@ const Home = () => {
       </div>
 
       {
-        filterTwoDate === true && <div className=" mt-4 mb-8">
+        filterBetween === true && <div className=" mt-4 mb-8">
           <table className="w-full table-fixed">
             <thead>
               <tr className=" bg-black text-white">
@@ -1420,10 +1427,10 @@ const Home = () => {
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) /filterStats.appointmentsByDates.length)  * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) /filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format((filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-2/12 text-xs py-3  text-center'>
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.inwaitings, 0)}</p>

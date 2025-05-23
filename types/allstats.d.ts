@@ -10,9 +10,16 @@ interface AllStats {
     weeks: string[];
     years: string[];
     totalByOffices: any[];
+    appointmentsByHourSlot: Slot[];
+    servingAppointmentsByHourSlot: Slot[];
 }
 
 interface Rec {
     name: string;
     amount: number;
+}
+
+interface Slot {
+    time: string;
+    data: Rec[];
 }
