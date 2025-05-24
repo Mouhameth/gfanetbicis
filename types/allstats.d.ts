@@ -12,6 +12,8 @@ interface AllStats {
     totalByOffices: any[];
     appointmentsByHourSlot: Slot[];
     servingAppointmentsByHourSlot: Slot[];
+    totalInTimeByOffice: any[];
+    totalNotInTimeByOffice: any[];
 }
 
 interface Rec {

@@ -93,7 +93,9 @@ const Report = () => {
         totalAppointments: 0,
         totalByOffices: [],
         appointmentsByHourSlot: [],
-        servingAppointmentsByHourSlot: []
+        servingAppointmentsByHourSlot: [],
+        totalInTimeByOffice: [],
+        totalNotInTimeByOffice: []
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
@@ -387,7 +389,7 @@ const Report = () => {
     }
 
     return (
-        <div className=' bg-gray-200 h-fit  w-full rounded-t-xl p-4'>
+        <div className=' h-screen bg-gray-200 overflow-y-scroll  w-full rounded-t-xl p-4'>
             <div className=" w-full flex items-center justify-between">
                 <div className="flex gap-3 items-center">
                     <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
@@ -609,7 +611,7 @@ const Report = () => {
             <h3 className=" font-bold mt-8">3- Pourcentage des clients par Site</h3>
             {
                 filter == false ?
-                    <div className="w-full h-1/3 flex justify-center bg-white rounded-md p-4 my-4">
+                    <div className="w-full h-5/6 flex justify-center bg-white rounded-md p-4 my-4">
                         <Doughnut
                             data={{
                                 labels: result?.appointmentsByOffice.map(record => record.name),
@@ -624,7 +626,7 @@ const Report = () => {
                         />
                     </div>
                     :
-                    <div className="w-full h-1/3 flex justify-center bg-white rounded-md p-4 my-4">
+                    <div className="w-full h-5/6 flex justify-center bg-white rounded-md p-4 my-4">
                         <Doughnut
                             data={{
                                 labels: filterStats?.appointmentsByOffice.map(record => record.name),
@@ -987,6 +989,160 @@ const Report = () => {
                             </td>
                         }
 
+                    </tr>
+                </>
+                }
+            </table>
+
+            <h3 className=" font-bold my-4">8- Tableau comparatif des agences par rapport aux opérations en normes</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Agence</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Nombre Tickets %</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Attente %</th>
+                        <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Ttraitement %</th>
+                    </tr>
+                </thead>
+                {filter == false ? <> {
+                    result.totalInTimeByOffice?.map((appointment) => (
+                        <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.name}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.receives / result.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.waitings / result.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.serves / result.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100).toFixed(1)}%
+                            </td>
+                        </tr>
+                    ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0) / result.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0) / result.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0) / result.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100}%
+                        </td>
+                    </tr>
+                </> : <>
+                    {
+                        filterStats.totalInTimeByOffice?.map((appointment) => (
+                            <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className='text-xs py-2 px-1 font-semibold'>
+                                    {appointment.name}
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.receives / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.waitings / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.serves / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100).toFixed(1)}%
+                                </td>
+                            </tr>
+                        ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0) / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0) / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0) / filterStats.totalInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100}%
+                        </td>
+                    </tr>
+                </>
+                }
+            </table>
+
+            <h3 className=" font-bold my-4">9- Tableau comparatif des agences par rapport aux opérations hors normes</h3>
+            <table className="w-full table-fixed">
+                <thead>
+                    <tr className=" bg-black">
+                        <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Agence</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Nombre Tickets %</th>
+                        <th className="w-1/4 py-4 text-left text-white text-xs font-semibold">Attente %</th>
+                        <th className="w-1/3 py-4 text-left text-white text-xs font-semibold">Ttraitement %</th>
+                    </tr>
+                </thead>
+                {filter == false ? <> {
+                    result.totalNotInTimeByOffice?.map((appointment) => (
+                        <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                            <td className='text-xs py-2 px-1 font-semibold'>
+                                {appointment.name}
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.receives / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.waitings / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100).toFixed(1)}%
+                            </td>
+                            <td className=' text-xs opacity-60'>
+                                {((appointment.serves / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100).toFixed(1)}%
+                            </td>
+                        </tr>
+                    ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0) / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0) / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(result.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0) / result.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100}%
+                        </td>
+                    </tr>
+                </> : <>
+                    {
+                        filterStats.totalNotInTimeByOffice?.map((appointment) => (
+                            <tr key={appointment.name} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
+                                <td className='text-xs py-2 px-1 font-semibold'>
+                                    {appointment.name}
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.receives / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.waitings / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100).toFixed(1)}%
+                                </td>
+                                <td className=' text-xs opacity-60'>
+                                    {((appointment.serves / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100).toFixed(1)}%
+                                </td>
+                            </tr>
+                        ))}
+                    <tr className="bg-green-600 text-white ">
+                        <td className='text-xs py-2 px-3 font-semibold'>
+                            Total
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0) / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.receives, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0) / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.waitings, 0)) * 100}%
+                        </td>
+                        <td className=' text-xs'>
+                            {(filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0) / filterStats.totalNotInTimeByOffice?.reduce((total, item) => total + item.serves, 0)) * 100}%
+                        </td>
                     </tr>
                 </>
                 }
