@@ -396,6 +396,7 @@ const Home = () => {
     try {
       setFilter(true);
       setFilterTwoDate(true);
+      setFilterBetween(true);
       setFilterOffice(false);
       setLoading(true);
       setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}, nombre de jours ouvrés: ${differenceInDays}`);
@@ -1264,7 +1265,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates.length === 0? 0 : filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates.length === 0 ? 0 : filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Attente moyenne
@@ -1277,7 +1278,7 @@ const Home = () => {
             </div>
             <div>
               <h2 className=" text-md font-bold">
-                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates.length === 0? 0 : filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
+                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : filterBetween ? format((filterStats.appointmentsByDates.length === 0 ? 0 : filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
               </h2>
               <p className=" text-xs opacity-60">
                 Traitement moyen
@@ -1375,6 +1376,14 @@ const Home = () => {
 
       {
         filterBetween === true && <div className=" mt-4 mb-8">
+          <div className="flex gap-2 items-center mb-2">
+            <HiOutlineBuildingOffice />
+            <p className=" text-xs font-bold">{officeName.toUpperCase()}</p>
+          </div>
+          <div className="flex gap-2 items-center mb-2">
+            <FaRegCalendar />
+            <p className=" text-xs font-bold">{currentDate}</p>
+          </div>
           <table className="w-full table-fixed">
             <thead>
               <tr className=" bg-black text-white">
@@ -1426,10 +1435,10 @@ const Home = () => {
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.receives, 0)}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format(filterStats.appointmentsByDates.length === 0? 0 : (filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format(filterStats.appointmentsByDates.length === 0 ? 0 : (filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanWaiting, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-1/12 text-xs py-3  text-center'>
-                <p>{format(filterStats.appointmentsByDates.length === 0? 0 : (filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
+                <p>{format(filterStats.appointmentsByDates.length === 0 ? 0 : (filterStats.appointmentsByDates?.reduce((total, item) => total + item.meanServing, 0) / filterStats.appointmentsByDates.length) * 60 * 1000, 'HH:mm:ss')}</p>
               </td>
               <td className='w-2/12 text-xs py-3  text-center'>
                 <p>{filterStats.appointmentsByDates?.reduce((total, item) => total + item.inwaitings, 0)}</p>
@@ -2202,6 +2211,14 @@ const Home = () => {
         </div>
       }
       {filter == false ? <div className=" w-full bg-white rounded-md p-4 my-4">
+        <div className="flex gap-2 items-center mb-2">
+            <HiOutlineBuildingOffice />
+            <p className=" text-xs font-bold">{officeName.toUpperCase()}</p>
+          </div>
+          <div className="flex gap-2 items-center mb-2">
+            <FaRegCalendar />
+            <p className=" text-xs font-bold">{currentDate}</p>
+          </div>
         <Line data={{
           labels: result?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()}:00:00`),
           datasets: [
@@ -2228,6 +2245,14 @@ const Home = () => {
 
       </div> :
         <div className=" w-full bg-white rounded-md p-4 my-4">
+          <div className="flex gap-2 items-center mb-2">
+            <HiOutlineBuildingOffice />
+            <p className=" text-xs font-bold">{officeName.toUpperCase()}</p>
+          </div>
+          <div className="flex gap-2 items-center mb-2">
+            <FaRegCalendar />
+            <p className=" text-xs font-bold">{currentDate}</p>
+          </div>
           <Line data={{
             labels: filterStats?.appointmentsByHourSlot.map(record => record.name),
             datasets: [
