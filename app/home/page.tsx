@@ -500,7 +500,7 @@ const Home = () => {
         const data = {
           'Date d\'arrivée': element.date,
           'Heure d\'arrivée': element.time,
-          'No d\'arrivée': element.id,
+          'No d\'arrivée': element.num,
           'No de ticket': element.num,
           'Service': element.Service ? element.Service.name : '',
           "Point d'appel": element.Subservice ? element.Subservice.name : '',
@@ -776,7 +776,6 @@ const Home = () => {
         const inWaitingTime = stats.totatlInWaitingBySubService.find((item: { name: any; }) => item.name === name);
         if (inWaitingTime) {
           inWSubData[name] = inWaitingTime.amount;
-
         } else {
           inWSubData[name] = '00:00:00';
         }
@@ -902,7 +901,7 @@ const Home = () => {
       const element = list.appointmentList[index];
       const data = {
         'Heure d\'arrivée': element.time,
-        'No d\'arrivée': element.id,
+        'No d\'arrivée': element.num,
         'No de ticket': element.num,
         'Service': element.Service ? element.Service.name : '',
         "Point d'appel": element.Subservice ? element.Subservice.name : '',

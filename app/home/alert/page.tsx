@@ -7,8 +7,7 @@ import { Alert } from "@/types/alert";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "@mui/material";
 import { useSession } from "next-auth/react";
-import { root } from "postcss";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { IoIosAddCircle, IoIosClose } from "react-icons/io";
@@ -85,8 +84,6 @@ const Home = () => {
 
     const onSubmit = async (data: FormData) => {
         try {
-            console.log(data.userId);
-            
             if (!data.userId) {
 
                 if (userSession?.user.role.name.toLowerCase() === "root") {
@@ -120,7 +117,6 @@ const Home = () => {
         finally {
             setLoading(false);
         }
-
     }
 
     const deleteAlert = async () => {
@@ -195,6 +191,7 @@ const Home = () => {
             <select className='flex items-center border border-black rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
                 {...register("officeId", { valueAsNumber: true })}>
                 <option value="">--Sélectionnez une agence--</option>
+                <option value={0}>Toutes les agences</option>
                 {fetchedOffices?.map((office) => (
                     <option key={office.id} value={office.id}>{office.name}</option>
                 ))}
