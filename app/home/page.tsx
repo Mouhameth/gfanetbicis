@@ -468,7 +468,7 @@ const Home = () => {
     }
     if (stats) {
       // Ajouter le titre et la description sur des lignes distinctes
-      const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } }; // Style personnalisé pour le titre
+      const titleStyle = { font: { bold: true, size: 24, color: '#FF0000' } }; // Style personnalisé pour le titre
       const title = { '': { v: 'Tickets', s: titleStyle } };
       const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } }; // Style personnalisé pour la description
       const descript = { '': { v: description, s: descriptionStyle } };
@@ -861,7 +861,7 @@ const Home = () => {
       const appData = new Blob([appBuffer], { type: fileType });
 
       // Télécharger le fichier
-      FileSaver.saveAs(appData, `rapport_global_${officeName}.xlsx`);
+      FileSaver.saveAs(appData, `${officeName.charAt(0).toUpperCase() + officeName.slice(1)}_Rapport_global_${currentDate}.xlsx`);
     }
   }
 
