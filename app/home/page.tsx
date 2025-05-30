@@ -2254,7 +2254,7 @@ const Home = () => {
             <p className=" text-xs font-bold">{currentDate}</p>
           </div>
           <Line data={{
-            labels: filterStats?.appointmentsByHourSlot.map(record => record.name),
+            labels: filterStats?.appointmentsByHourSlot.map(record => `${new Date(record.name).getHours()? `${new Date(record.name).getHours()}:00:00`: record.name}`),
             datasets: [
               {
                 label: 'Nombre de clients',
@@ -2322,7 +2322,7 @@ const Home = () => {
                   {appointment.Service.name}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.Subservice.name}
+                  {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
@@ -2359,7 +2359,7 @@ const Home = () => {
                   {appointment.Service.name}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.Subservice.name}
+                  {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
@@ -2435,7 +2435,7 @@ const Home = () => {
                       {appointment.Service.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.Subservice.name}
+                      {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
@@ -2472,7 +2472,7 @@ const Home = () => {
                       {appointment.Service.name}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {appointment.Subservice.name}
+                      {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
@@ -2550,7 +2550,7 @@ const Home = () => {
                             {appointment.Service.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.Subservice.name}
+                            {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
@@ -2591,7 +2591,7 @@ const Home = () => {
                               {appointment.Service.name}
                             </td>
                             <td className=' text-xs opacity-60'>
-                              {appointment.Subservice.name}
+                              {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                             </td>
                             <td className=' text-xs opacity-60'>
                               {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
@@ -2670,7 +2670,7 @@ const Home = () => {
                             {appointment.Service.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.Subservice.name}
+                            {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
@@ -2710,7 +2710,7 @@ const Home = () => {
                             {appointment.Service.name}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.Subservice.name}
+                            {appointment.serve === true || appointment.received === true ? appointment.Subservice.name: `Aucun`}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.callTime !== null ? appointment.callTime : <span>00.00.00</span>}
