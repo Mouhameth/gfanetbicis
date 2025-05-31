@@ -443,7 +443,7 @@ const Report = () => {
                 title="Pourcentage des clients par Site"
                 icon={AiFillPieChart}
             >
-                <div className="space-y-4 h-[620px] flex justify-center">
+                <div className="space-y-4 h-[625px] flex justify-center">
                     {
                         filter == false ? <Doughnut
                             data={{
