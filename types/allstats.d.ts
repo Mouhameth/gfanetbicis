@@ -1,4 +1,6 @@
 interface AllStats {
+    allAdmins: number;
+    allUsers: number;
     totalAppointments: number;
     subServices: number;
     services: number;

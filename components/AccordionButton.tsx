@@ -1,5 +1,6 @@
 interface AccordionProps {
   title: string;
+  width: string;
   children: React.ReactNode;
   defaultOpen?: boolean;
 }

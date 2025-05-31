@@ -5,12 +5,13 @@ import { MdTimer } from "react-icons/md";
 export const Accordion: React.FC<AccordionProps> = ({
     title,
     children,
+    width,
     defaultOpen = false
 }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (
-        <div className=" w-1/3 max-w-md rounded-lg overflow-hidden shadow-md bg-white mb-4">
+        <div className={`${width} bg-white shadow-md mb-4 max-w-md  rounded-lg `}>
             {/* Header */}
             <div
                 onClick={() => setIsOpen(!isOpen)}

@@ -1133,7 +1133,7 @@ const Home = () => {
         <p className=" text-xs font-bold">{currentDate}</p>
       </div>
 
-      <Accordion title="Métriques">
+      <Accordion title="Métriques" width="w-1/3">
         {
           fetchedTimes && fetchedTimes.map((time) => (
             <>
