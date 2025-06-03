@@ -387,7 +387,7 @@ const Admins = () => {
                 {role.name.toLocaleLowerCase() === "root" && <p>administrateur</p>}
                 {role.name.toLocaleLowerCase() === "admin" && <p>superviseur</p>}
                 {role.name.toLocaleLowerCase() === "marketing" && <p>marketing et communication</p>}
-                {role.name.toLocaleLowerCase() === "user" && <p>Chef d'agence</p>}
+                {role.name.toLocaleLowerCase() === "user" && <p>Chef d&apos;agence</p>}
               </>
             </option>
           ))
@@ -566,7 +566,7 @@ const Admins = () => {
                         {user.Role.name.toLocaleLowerCase() === "root" && <p>super administrateur</p>}
                         {user.Role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
                         {user.Role.name.toLocaleLowerCase() === "marketing" && <p>Marketing et communication</p>}
-                        {user.Role.name.toLocaleLowerCase() === "user" && <p>Chef d'agence</p>}
+                        {user.Role.name.toLocaleLowerCase() === "user" && <p>Chef d&apos;agence</p>}
                       </>
                       }
                     </td>
