@@ -8,7 +8,7 @@ interface User {
     role: Role;
     subservice?: SubService;
     services?: Service[];
-    officeId: number;
+    office_id: number;
     createdAt: Date;
     office?: Office
 }

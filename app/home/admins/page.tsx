@@ -17,6 +17,7 @@ import { FiEdit3 } from 'react-icons/fi';
 import { TbTallymark4 } from 'react-icons/tb';
 import useAxiosAuth from '@/hooks/useAxiosAuth';
 import useSWR from 'swr';
+import { PiBuildingOfficeBold } from 'react-icons/pi';
 
 const schema = zod.object({
   username: zod.string(
@@ -34,8 +35,9 @@ const schema = zod.object({
   role_id: zod.number({
     required_error: "le role est obligatoire",
     invalid_type_error: "le role est obligatoire"
-  }).min(1, { message: "le role est obligatoire" })
-  
+  }).min(1, { message: "le role est obligatoire" }),
+  office_id: zod.any().optional(),
+
 }).required();
 type FormData = zod.infer<typeof schema>;
 
@@ -57,7 +59,8 @@ const updateSchema = zod.object({
   role_id: zod.number({
     required_error: "le role est obligatoire",
     invalid_type_error: "le role est obligatoire"
-  }).min(1, { message: "le role est obligatoire" })
+  }).min(1, { message: "le role est obligatoire" }),
+  office_id: zod.any().optional(),
 }).required();
 type UpdateFormData = zod.infer<typeof updateSchema>;
 
@@ -65,8 +68,10 @@ const Admins = () => {
   const axiosAuth = useAxiosAuth();
   const url = `/role`;
   const userUrl = `/user`;
+  const officeUrl = `/office`;
   const { data: fetchedUsers, isLoading, error, mutate } = useSWR(userUrl, () => axiosAuth.get<User[]>(userUrl).then((res) => res.data));
   const { data: fetchedRoles, isLoading: fetchRoleLoading, error: fetchRoleError, mutate: mutateRole } = useSWR(url, () => axiosAuth.get<Role[]>(url).then((res) => res.data));
+  const { data: fetchedOffices, isLoading: fetchOfficesLoading, error: fetchOfficeError } = useSWR(officeUrl, () => axiosAuth.get<Office[]>(officeUrl).then((res) => res.data));
   const fetchUsers: User[] = [];
   const useChangeTitle = useChangeHeaderTitle();
   const [allUserList, setAllUserList] = useState(fetchUsers);
@@ -104,7 +109,7 @@ const Admins = () => {
     phone: '',
     active: false,
     createdAt: new Date(),
-    officeId: 0
+    office_id: 0
   };
 
   const [userToUpdate, setUserToUpdate] = useState(userToDelete);
@@ -129,6 +134,13 @@ const Admins = () => {
 
   const onSubmit = useCallback(async (data: FormData) => {
     try {
+      const isUser = fetchedRoles!.find((role) => role.id === data.role_id);
+      console.log('isUser', isUser);
+
+      if (isUser && isUser.name === 'user' && !data.office_id) {
+        toast.error('Sélectionner une agence pour cet utilisateur!', { duration: 3000, className: " text-xs" });
+        return;
+      }
       setAddLoading(true);
       const res = await axiosAuth.post(`${userUrl}/register`, data);
       if (res.status == 201) {
@@ -138,7 +150,9 @@ const Admins = () => {
       }
     }
     catch (error: any) {
-      toast.error('Cet utilisateur existe, réessayer!', { duration: 3000, className: " text-xs" });
+      console.log('error', error);
+
+      toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
     }
     finally {
       setAddLoading(false);
@@ -258,6 +272,30 @@ const Admins = () => {
       setLoading(false);
     }
   }
+  const [userType, setUserType] = useState('');
+
+  const renderTargetField = () => {
+    switch (userType) {
+      case "user":
+        return (
+          <select className='flex items-center border border-gray-100 rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
+            {...register("office_id", { valueAsNumber: true })} >
+            <option value="" selected>Sélectionner une agence</option>
+            {
+              fetchedOffices?.map((office) => (
+                <option key={office.id} value={office.id}>
+                  <>
+                    <p>{office.name}</p>
+                  </>
+                </option>
+              ))
+            }
+          </select>
+        );
+      default:
+        return null;
+    }
+  };
 
   const activeUser = async () => {
     try {
@@ -335,21 +373,28 @@ const Admins = () => {
       <p className=" text-xs text-red-500">{errors.phone?.message}</p>
 
       <select className='flex items-center border border-gray rounded dark:border-gray p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
-        {...register("role_id", { valueAsNumber: true })} >
+        {...register("role_id", {
+          valueAsNumber: true, onChange: (e) => setUserType(
+            fetchedRoles?.find(role => role.id === parseInt(e.target.value))?.name.toLocaleLowerCase() || ''
+          )
+
+        })} >
         <option value="" selected>Sélectionner le rôle</option>
         {
           fetchedRoles?.map((role) => (
-            role.name !== "user" && <option key={role.id} value={role.id}>
+            <option key={role.id} value={role.id}>
               <>
                 {role.name.toLocaleLowerCase() === "root" && <p>administrateur</p>}
                 {role.name.toLocaleLowerCase() === "admin" && <p>superviseur</p>}
                 {role.name.toLocaleLowerCase() === "marketing" && <p>marketing et communication</p>}
+                {role.name.toLocaleLowerCase() === "user" && <p>Chef d'agence</p>}
               </>
             </option>
           ))
         }
       </select>
       <p className=" text-xs text-red-500">{errors.role_id?.message}</p>
+      {userType && renderTargetField()}
       {addLoading == false && <input className=" w-full bg-black mx-auto p-3 text-xs font-semibold text-white hover:bg-green-500 cursor-pointer rounded-md" value="Soumettre" type="submit" />}
     </form>
   );
@@ -435,7 +480,7 @@ const Admins = () => {
     </form>
   )
 
-  if (isLoading || fetchRoleLoading || loading || allUserList.length == 0) {
+  if (isLoading || fetchRoleLoading || loading || allUserList.length == 0 || fetchOfficesLoading) {
     return <Loader />
   }
 
@@ -492,13 +537,17 @@ const Admins = () => {
               </thead>
               {
                 userList?.map((user) => (
-                  user.Role.name !== "user" && 
                   <tr key={user.id} className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
                     <td className=' flex gap-2 p-2 items-center'>
                       <BsPersonCircle size={32} />
                       <div>
                         <p className=' text-xs font-semibold pb-1'>{user.name}</p>
                         <p className=' text-xs font-medium text-gray-400'>{user.username}</p>
+                        {user.office &&
+                          <div className=' flex items-start gap-1 pt-1'>
+                            <PiBuildingOfficeBold className=' w-4 h-4' />
+                            <p className=' capitalize text-xs font-medium text-gray-600'>{user.office.name}</p>
+                          </div>}
                       </div>
                     </td>
                     <td className='text-xs'>
@@ -517,6 +566,7 @@ const Admins = () => {
                         {user.Role.name.toLocaleLowerCase() === "root" && <p>super administrateur</p>}
                         {user.Role.name.toLocaleLowerCase() === "admin" && <p>Superviseur</p>}
                         {user.Role.name.toLocaleLowerCase() === "marketing" && <p>Marketing et communication</p>}
+                        {user.Role.name.toLocaleLowerCase() === "user" && <p>Chef d'agence</p>}
                       </>
                       }
                     </td>

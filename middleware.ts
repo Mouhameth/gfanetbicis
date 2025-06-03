@@ -27,6 +27,7 @@ export default withAuth(
       "/home/settings",
       "/home/report",
       "/home/time",
+      "/home/medias",
       "/home/devis",
       "/home/alert"
     ];
@@ -40,8 +41,7 @@ export default withAuth(
     ];
 
     const adminOfficeRoutes = [
-      "/office",
-      "/home/alert",
+      "/home/office",
       "/home/settings"
     ];
 

@@ -11,12 +11,12 @@ import { TbReportAnalytics } from "react-icons/tb";
 
 const rootItems = [
     {
-        label: "Dashboard Par Agence",
+        label: "Dashboard Général",
         href: "/home",
         icon: RxDashboard
     },
     {
-        label: "Dashboard Général",
+        label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
     },
@@ -58,11 +58,12 @@ const rootItems = [
 const adminOfficeItems = [
     {
         label: "Dashboard",
-        href: "/office",
+        href: "/home/office",
         icon: RxDashboard
-    },{
+    },
+    {
         label: "Paramètre",
-        href: "/office/settings",
+        href: "/home/settings",
         icon: LuSettings,
         auth: true
     }
@@ -70,12 +71,12 @@ const adminOfficeItems = [
 
 const adminItems = [
     {
-        label: "Dashboard Par Agence",
+        label: "Dashboard Général",
         href: "/home",
         icon: RxDashboard
     },
     {
-        label: "Dashboard Général",
+        label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
     },
@@ -110,12 +111,12 @@ const adminItems = [
 
 const marketingItems = [
     {
-        label: "Dashboard Par Agence",
+        label: "Dashboard Général",
         href: "/home",
         icon: RxDashboard
     },
     {
-        label: "Dashboard Général",
+        label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
     },
@@ -147,7 +148,7 @@ const SideBar = () => {
             <div>
                 <SidebarLogo />
                 <div>
-                    {session?.user.role.name == "root" && (!session?.user.officeId || session?.user.officeId ===0) && rootItems.map((item) => (
+                    {session?.user.role.name == "root" && rootItems.map((item) => (
                         <SidebarItem
                             key={item.href}
                             href={item.href}
@@ -156,7 +157,7 @@ const SideBar = () => {
                             auth={item.auth}
                         />
                     ))}
-                    {session?.user.role.name == "admin" && (!session?.user.officeId || session?.user.officeId ===0) && adminItems.map((item) => (
+                    {session?.user.role.name == "admin" && adminItems.map((item) => (
                         <SidebarItem
                             key={item.href}
                             href={item.href}
@@ -174,7 +175,7 @@ const SideBar = () => {
                             auth={item.auth}
                         />
                     ))}
-                    {session?.user.role.name === "admin" && session?.user.officeId && session?.user.officeId !==0 && adminOfficeItems.map((item) => (
+                    {session?.user.role.name === "user" && adminOfficeItems.map((item) => (
                         <SidebarItem
                             key={item.href}
                             href={item.href}
@@ -194,6 +195,7 @@ const SideBar = () => {
                         {session?.user.role.name.toLowerCase() === "root" &&<p className=" text-xs">Super administrateur</p>}
                         {session?.user.role.name.toLowerCase() === "admin" &&<p className=" text-xs">Manager</p>}
                         {session?.user.role.name.toLowerCase() === "marketing" &&<p className=" text-xs">Marketing et Communication</p>}
+                        {session?.user.role.name.toLowerCase() === "user" &&<p className=" text-xs">Chef d'agence</p>}
                         
                     </div>
                 </div>

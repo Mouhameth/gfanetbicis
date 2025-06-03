@@ -65,8 +65,8 @@ export default function Home() {
 
   useEffect(() => {
     if (status === "authenticated") {
-      if (session.user.officeId && session.user.officeId !== 0 && session.user.role.name === "root") {
-        router.push('/office')
+      if (session.user.role.name === "user") {
+        router.push('/home/office')
       } 
       else {
         router.push('/home')

@@ -272,7 +272,10 @@ const Home = () => {
                                     <p className=" px-2 text-xs text-gray-400">Créée le: {new Date(alert.createdAt).toLocaleString("fr-FR", {
                                         year: "numeric",
                                         month: "long",
-                                        day: "numeric"
+                                        day: "numeric",
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        second: "2-digit"
                                     })}</p>
                                 </div>
                             ))
