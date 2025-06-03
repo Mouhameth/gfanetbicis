@@ -377,7 +377,6 @@ const Admins = () => {
           valueAsNumber: true, onChange: (e) => setUserType(
             fetchedRoles?.find(role => role.id === parseInt(e.target.value))?.name.toLocaleLowerCase() || ''
           )
-
         })} >
         <option value="" selected>Sélectionner le rôle</option>
         {

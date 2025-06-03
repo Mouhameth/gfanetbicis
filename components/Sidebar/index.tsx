@@ -195,7 +195,7 @@ const SideBar = () => {
                         {session?.user.role.name.toLowerCase() === "root" &&<p className=" text-xs">Super administrateur</p>}
                         {session?.user.role.name.toLowerCase() === "admin" &&<p className=" text-xs">Manager</p>}
                         {session?.user.role.name.toLowerCase() === "marketing" &&<p className=" text-xs">Marketing et Communication</p>}
-                        {session?.user.role.name.toLowerCase() === "user" &&<p className=" text-xs">Chef d'agence</p>}
+                        {session?.user.role.name.toLowerCase() === "user" &&<p className=" text-xs">Chef d&apos;agence</p>}
                         
                     </div>
                 </div>
