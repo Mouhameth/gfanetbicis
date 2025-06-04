@@ -134,7 +134,7 @@ const Admins = () => {
 
   const onSubmit = useCallback(async (data: FormData) => {
     try {
-      const isUser = fetchedRoles!.find((role) => role.id === data.role_id);
+      const isUser = fetchedRoles?.find((role) => role.id === data.role_id);
       console.log('isUser', isUser);
 
       if (isUser && isUser.name === 'user' && !data.office_id) {
@@ -278,7 +278,7 @@ const Admins = () => {
     switch (userType) {
       case "user":
         return (
-          <select className='flex items-center border border-gray-100 rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
+          <select className='flex items-center border border-gray-200 rounded-lg dark:border-black p-3 text-xs  placeholder:text-gray-100 focus:outline-gray'
             {...register("office_id", { valueAsNumber: true })} >
             <option value="" selected>Sélectionner une agence</option>
             {

@@ -1199,7 +1199,7 @@ const Report = () => {
                         </div>
                         <div>
                             <h2 className=" text-md font-bold">
-                                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
+                                {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                             </h2>
                             <p className=" text-xs opacity-60">
                                 Traitement moyen
