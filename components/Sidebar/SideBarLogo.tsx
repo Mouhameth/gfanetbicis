@@ -1,5 +1,5 @@
 import { BsTwitter } from "react-icons/bs"
-import logo from "@/assets/applogo.png"
+import bank from "@/assets/bank.jpg"
 import Image from "next/image"
 
 const SidebarLogo = () => {
@@ -7,14 +7,14 @@ const SidebarLogo = () => {
 
   return (
     <div className="
-    h-40
-    w-40
-    p-4
+    h-36
+    w-36
+    p-5
     mx-auto
     cursor-pointer
     transition
     ">
-      <Image src={logo} alt={""} />
+      <Image src={bank} alt={""} />
     </div>
   )
 }
