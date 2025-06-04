@@ -9,7 +9,7 @@ const SidebarLogo = () => {
     <div className="
     h-36
     w-36
-    p-5
+    p-4
     mx-auto
     cursor-pointer
     transition
