@@ -1,5 +1,5 @@
 "use client";
-import { RiFileExcel2Fill } from "react-icons/ri";
+import { RiFileExcel2Fill, RiLoader2Fill } from "react-icons/ri";
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -17,7 +17,7 @@ import useAxiosAuth from "@/hooks/useAxiosAuth";
 import * as FileSaver from 'file-saver';
 import XLSX from 'sheetjs-style';
 import { useEffect, useState } from "react";
-import { IoReload, IoTabletLandscape, IoTrendingUpOutline } from "react-icons/io5";
+import { IoCheckmarkDoneCircleSharp, IoReload, IoTabletLandscape, IoTrendingUpOutline } from "react-icons/io5";
 import { FaClipboardList, FaGraduationCap, FaRegCalendar, FaUsers } from "react-icons/fa";
 import { CiCircleAlert, CiFilter } from "react-icons/ci";
 import { Menu, MenuItem } from "@mui/material";
@@ -29,12 +29,12 @@ import 'chart.js/auto';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { HiOutlineBuildingOffice } from "react-icons/hi2";
-import { Accordion } from "@/components/Accordion";
-import { BsChevronBarDown, BsChevronBarUp } from "react-icons/bs";
+import { BsChevronBarDown, BsChevronBarUp, BsStickyFill } from "react-icons/bs";
 import { AiFillPieChart } from "react-icons/ai";
 import { GoClock } from "react-icons/go";
 import { IoIosTrendingUp } from "react-icons/io";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
+import { FaSquarePollVertical } from "react-icons/fa6";
 
 
 ChartJS.register(
@@ -136,7 +136,10 @@ const Report = () => {
         totalInWaiting: 0,
         totatlInServing: 0,
         totalNotInWaiting: 0,
-        totatlNotInServing: 0
+        totatlNotInServing: 0,
+        waitings: 0,
+        receives: 0,
+        appointments: 0
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
@@ -1178,14 +1181,65 @@ const Report = () => {
             </div>
             {/* Container principal avec hauteur 2/3 de l'écran */}
             <div className=" flex justify-center items-center">
-                <MdTimer size={50} />
+                <FaSquarePollVertical size={40} className=" mr-1" />
                 <div className="flex bg-white rounded-sm justify-between items-center ">
-                    <div className="flex w-52 h-20 py-4 items-center justify-center gap-2 border-r-[1px]">
+
+                    <div className="flex w-fit p-2 h-20 items-center justify-center gap-2 border-r-[1px]">
+                        <div className=" w-8 h-8 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                            <IoCheckmarkDoneCircleSharp className=" text-green-600" />
+                        </div>
+                        <div>
+                            <h2 className=" text-xs font-bold">
+                                {filter === false ? result?.receives : filterStats.receives}
+                            </h2>
+                            <div className=" flex items-center gap-2">
+                                <p className=" text-xs opacity-60">
+                                    Traités
+                                </p>
+                                <p className=" text-xs text-green-500 font-semibold">
+                                    {filter === false ? `${result?.receives ? `${((result?.receives / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.receives ? `${((filterStats?.receives / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex w-fit px-2 py-2 items-center justify-center gap-4 border-r-[1px]">
+                        <div className=" w-8 h-8 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                            <RiLoader2Fill className=" text-red-600" />
+                        </div>
+                        <div>
+                            <h2 className=" text-xs font-bold">
+                                {filter === false ? result?.waitings : filterStats.waitings}
+                            </h2>
+                            <div className=" flex items-center gap-2">
+                                <p className=" text-xs opacity-60">
+                                    En attente
+                                </p>
+                                <p className=" text-xs text-red-500 font-semibold">
+                                    {filter === false ? `${result?.waitings ? `${((result?.waitings / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.waitings ? `${((filterStats?.waitings / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-4 border-r-[1px]">
+                        <div className=" w-8 h-8 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                            <BsStickyFill className=" text-yellow-600" />
+                        </div>
+                        <div>
+                            <h2 className=" text-xs font-bold">
+                                {filter === false ? result?.appointments : filterStats.appointments}
+                            </h2>
+                            <p className=" text-xs opacity-60">
+                                Total
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-2 border-r-[1px]">
                         <div className=" w-12 h-12 bg-red-400 bg-opacity-10 rounded-full flex justify-center items-center">
                             <MdOutlineTimelapse className=" text-red-500" />
                         </div>
                         <div>
-                            <h2 className=" text-md font-bold">
+                            <h2 className=" text-xs font-bold">
                                 {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
                             </h2>
                             <p className=" text-xs opacity-60">
@@ -1193,12 +1247,12 @@ const Report = () => {
                             </p>
                         </div>
                     </div>
-                    <div className="flex w-58 h-20 py-4 px-2 items-center justify-center gap-2 border-r-[1px]">
+                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-2 border-r-[1px]">
                         <div className=" w-12 h-12 bg-green-400 bg-opacity-10 rounded-full flex justify-center items-center">
                             <MdOutlineTimelapse className=" text-green-500" />
                         </div>
                         <div>
-                            <h2 className=" text-md font-bold">
+                            <h2 className=" text-xs font-bold">
                                 {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                             </h2>
                             <p className=" text-xs opacity-60">
@@ -1206,12 +1260,12 @@ const Report = () => {
                             </p>
                         </div>
                     </div>
-                    <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
+                    <div className=" w-fit h-20 p-2 gap-2 border-r-[1px]">
                         <div>
                             <p className=" text-xs opacity-60 text-center pb-1 ">
                                 Attente optimale
                             </p>
-                            <div className=" flex justify-between px-2">
+                            <div className=" flex justify-between px-2 gap-2 pb-1">
                                 <div className=" text-center">
                                     <p className=" text-xs opacity-60">
                                         Ticket
@@ -1248,12 +1302,12 @@ const Report = () => {
                             </div>
                         </div>
                     </div>
-                    <div className=" w-60 h-20 py-1 px-2 gap-2 border-r-[1px]">
+                    <div className=" w-fit h-20 p-2 gap-2 border-r-[1px]">
                         <div>
                             <p className=" text-xs opacity-60 text-center pb-1">
                                 Traitement optimal
                             </p>
-                            <div className=" flex justify-between px-2">
+                            <div className=" flex justify-between gap-2 px-2">
                                 <div className=" text-center">
                                     <p className=" text-xs opacity-60">
                                         Ticket

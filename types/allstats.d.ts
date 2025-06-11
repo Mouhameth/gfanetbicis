@@ -22,6 +22,9 @@ interface AllStats {
     totatlInServing: number;
     totalNotInWaiting: number;
     totatlNotInServing: number;
+    waitings: number;
+    receives: number;
+    appointments: number;
 }
 
 interface Rec {
