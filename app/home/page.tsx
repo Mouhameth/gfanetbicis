@@ -302,107 +302,108 @@ const Report = () => {
     };
 
     const exportToExcel = async () => {
-        let stats: any;
-        if (filter) {
-            stats = filterStats;
-        } else {
-            stats = result;
-        }
-        if (stats) {
-            // Ajouter le titre et la description sur des lignes distinctes
-            const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } }; // Style personnalisé pour le titre
-            const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } }; // Style personnalisé pour la description
-            const descript = { '': { v: description, s: descriptionStyle } };
+        toast.loading('En cours de maintenance, revenez plutard...', { duration: 3000, className: " text-xs" });
+        // let stats: any;
+        // if (filter) {
+        //     stats = filterStats;
+        // } else {
+        //     stats = result;
+        // }
+        // if (stats) {
+        //     // Ajouter le titre et la description sur des lignes distinctes
+        //     const titleStyle = { font: { bold: true, size: 18, color: '#FF0000' } }; // Style personnalisé pour le titre
+        //     const descriptionStyle = { font: { italic: true, size: 14, color: '#0000FF' } }; // Style personnalisé pour la description
+        //     const descript = { '': { v: description, s: descriptionStyle } };
 
-            const offices: any = [];
-            const title1 = { '': { v: 'Nombre de tickets par Agence', s: titleStyle } };
-            offices.push(title1, descript);
-            const jump = { '': '' };
-            offices.push(jump);
-            for (let index = 0; index < stats.appointmentsByOffice.length; index++) {
-                const element = stats.appointmentsByOffice[index];
-                const serviceTitle = { '': { v: element.name, s: titleStyle } };
-                offices.push(serviceTitle);
-                const headers2 = {
-                    'Reçu': 'Reçu',
-                    'Traité': 'Traité',
-                    'En attente': 'En attente'
-                };
-                offices.push(headers2);
-                const data = {
-                    'Reçu': element.amount ? element.amount : 0,
-                    'Traité': stats.serveAppointmentsByOffice[index]?.amount ? stats.serveAppointmentsByOffice[index]?.amount : 0,
-                    'En attente': stats.waitingAppointmentsByOffice[index]?.amount ? stats.waitingAppointmentsByOffice[index]?.amount : 0
-                };
-                offices.push(data);
-            }
+        //     const offices: any = [];
+        //     const title1 = { '': { v: 'Nombre de tickets par Agence', s: titleStyle } };
+        //     offices.push(title1, descript);
+        //     const jump = { '': '' };
+        //     offices.push(jump);
+        //     for (let index = 0; index < stats.appointmentsByOffice.length; index++) {
+        //         const element = stats.appointmentsByOffice[index];
+        //         const serviceTitle = { '': { v: element.name, s: titleStyle } };
+        //         offices.push(serviceTitle);
+        //         const headers2 = {
+        //             'Reçu': 'Reçu',
+        //             'Traité': 'Traité',
+        //             'En attente': 'En attente'
+        //         };
+        //         offices.push(headers2);
+        //         const data = {
+        //             'Reçu': element.amount ? element.amount : 0,
+        //             'Traité': stats.serveAppointmentsByOffice[index]?.amount ? stats.serveAppointmentsByOffice[index]?.amount : 0,
+        //             'En attente': stats.waitingAppointmentsByOffice[index]?.amount ? stats.waitingAppointmentsByOffice[index]?.amount : 0
+        //         };
+        //         offices.push(data);
+        //     }
 
-            const gloabl: any = [];
-            const globalTitle = { '': { v: 'Données globales pour toutes les agences', s: titleStyle } };
-            gloabl.push(globalTitle, descript);
-            gloabl.push(jump);
-            const gHeaders = {
-                'Agence': 'Agence',
-                'Services': 'Services',
-                'Points d\'appels': 'Points d\'appels',
-                'Agents': 'Agents'
-            };
-            gloabl.push(gHeaders);
-            gloabl.push({
-                'Agence': stats.offices,
-                'Service': stats.services,
-                'Point d\'appel': stats.subServices,
-                'Agent': stats.subServices
-            });
-
-
-            const offices2: any = [];
-            const title2 = { '': { v: 'Pourcentage des tickets par Agence', s: titleStyle } };
-            offices2.push(title2, descript);
-            offices2.push(jump);
-            const officeNames = stats.appointmentsByOffice.map((service: { name: any; }) => service.name);
-
-            // En-tête des colonnes avec les noms des services
-            const headerRow: any = {};
-            officeNames.forEach((name: string | number) => {
-                headerRow[name] = name;
-            });
-
-            offices2.push(headerRow);
-            const data: any = {};
-            officeNames.forEach((name: string | number) => {
-                const record = stats.appointmentsByOffice.find((item: { name: any; }) => item.name === name);
-                if (record) {
-                    data[name] = `${(record.amount * 100) / stats.appointmentsByOffice?.reduce((acc: any, current: { amount: any; }) => acc + current.amount, 0)}%`
-                } else {
-                    data[name] = "0%";
-                }
-            });;
-            offices2.push(data)
+        //     const gloabl: any = [];
+        //     const globalTitle = { '': { v: 'Données globales pour toutes les agences', s: titleStyle } };
+        //     gloabl.push(globalTitle, descript);
+        //     gloabl.push(jump);
+        //     const gHeaders = {
+        //         'Agence': 'Agence',
+        //         'Services': 'Services',
+        //         'Points d\'appels': 'Points d\'appels',
+        //         'Agents': 'Agents'
+        //     };
+        //     gloabl.push(gHeaders);
+        //     gloabl.push({
+        //         'Agence': stats.offices,
+        //         'Service': stats.services,
+        //         'Point d\'appel': stats.subServices,
+        //         'Agent': stats.subServices
+        //     });
 
 
+        //     const offices2: any = [];
+        //     const title2 = { '': { v: 'Pourcentage des tickets par Agence', s: titleStyle } };
+        //     offices2.push(title2, descript);
+        //     offices2.push(jump);
+        //     const officeNames = stats.appointmentsByOffice.map((service: { name: any; }) => service.name);
 
-            // Convertir les données en feuille de calcul
-            const globalWs = XLSX.utils.json_to_sheet(gloabl, { skipHeader: true });
-            const officesTWs = XLSX.utils.json_to_sheet(offices, { skipHeader: true });
-            const offices2Ws = XLSX.utils.json_to_sheet(offices2, { skipHeader: true });
+        //     // En-tête des colonnes avec les noms des services
+        //     const headerRow: any = {};
+        //     officeNames.forEach((name: string | number) => {
+        //         headerRow[name] = name;
+        //     });
 
-            // Créer un classeur et ajouter la feuille de calcul
-            const appWb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(appWb, globalWs, 'globals');
-            XLSX.utils.book_append_sheet(appWb, officesTWs, 'Total tickets par agence');
-            XLSX.utils.book_append_sheet(appWb, offices2Ws, 'pourcentage');
+        //     offices2.push(headerRow);
+        //     const data: any = {};
+        //     officeNames.forEach((name: string | number) => {
+        //         const record = stats.appointmentsByOffice.find((item: { name: any; }) => item.name === name);
+        //         if (record) {
+        //             data[name] = `${(record.amount * 100) / stats.appointmentsByOffice?.reduce((acc: any, current: { amount: any; }) => acc + current.amount, 0)}%`
+        //         } else {
+        //             data[name] = "0%";
+        //         }
+        //     });;
+        //     offices2.push(data)
 
-            // Convertir le classeur en tableau d'octets
-            const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
 
-            // Créer un Blob à partir des données du classeur
-            const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-            const appData = new Blob([appBuffer], { type: fileType });
 
-            // Télécharger le fichier
-            FileSaver.saveAs(appData, 'rapport.xlsx');
-        }
+        //     // Convertir les données en feuille de calcul
+        //     const globalWs = XLSX.utils.json_to_sheet(gloabl, { skipHeader: true });
+        //     const officesTWs = XLSX.utils.json_to_sheet(offices, { skipHeader: true });
+        //     const offices2Ws = XLSX.utils.json_to_sheet(offices2, { skipHeader: true });
+
+        //     // Créer un classeur et ajouter la feuille de calcul
+        //     const appWb = XLSX.utils.book_new();
+        //     XLSX.utils.book_append_sheet(appWb, globalWs, 'globals');
+        //     XLSX.utils.book_append_sheet(appWb, officesTWs, 'Total tickets par agence');
+        //     XLSX.utils.book_append_sheet(appWb, offices2Ws, 'pourcentage');
+
+        //     // Convertir le classeur en tableau d'octets
+        //     const appBuffer = XLSX.write(appWb, { bookType: 'xlsx', type: 'array' });
+
+        //     // Créer un Blob à partir des données du classeur
+        //     const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        //     const appData = new Blob([appBuffer], { type: fileType });
+
+        //     // Télécharger le fichier
+        //     FileSaver.saveAs(appData, 'rapport.xlsx');
+        // }
     }
 
     type AccordionItemProps = {
