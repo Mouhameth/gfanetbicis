@@ -1334,7 +1334,7 @@ const Report = () => {
         </div>
     }
 
-    if ((filter && filterStats.appointments == 0) || (!filter && result.appointments == 0)) {
+    if ((filter && filterStats.appointments == 0)) {
         return <div className=' h-screen bg-gray-200 w-full overflow-y-scroll rounded-t-xl px-4 py-3'>
             <div className=" w-full flex items-center justify-between">
                 <div className="flex gap-3 items-center">
@@ -1452,9 +1452,9 @@ const Report = () => {
                     </h3>
 
                     <p className="text-gray-600 mb-6 leading-relaxed">
-                        Données non disponibles pour cette date. soit c'est un jour férié, soit il y a eu un problème technique.
+                        Données non disponibles pour cette date. soit c&apos;est un jour férié, soit il y a eu un problème technique.
                         <br />
-                        Veuillez réessayer plus tard ou contacter le support technique s'il s'agit d'un problème.
+                        Veuillez réessayer plus tard ou contacter le support technique s&apos;il s&apos;agit d&apos;un problème.
                     </p>
 
                     <div className="mt-6 pt-4 border-t border-amber-200">
