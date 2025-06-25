@@ -30,7 +30,7 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { HiOutlineBuildingOffice } from "react-icons/hi2";
 import { BsChevronBarDown, BsChevronBarUp, BsStickyFill } from "react-icons/bs";
-import { AiFillPieChart } from "react-icons/ai";
+import { AiFillPieChart, AiOutlineClockCircle, AiOutlineWarning } from "react-icons/ai";
 import { GoClock } from "react-icons/go";
 import { IoIosTrendingUp } from "react-icons/io";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
@@ -1057,12 +1057,12 @@ const Report = () => {
         return colors;
     };
 
-    const totalAmount = result?.appointmentsByOffice?.reduce((acc, current) => acc + current.amount, 0) || 0;
+    const isSunday = (date: Date) => {
+        const today = new Date(date);
+        const dayOfWeek = today.getDay();
+        return dayOfWeek === 0;
+    };
 
-    const percentages = result?.appointmentsByOffice?.map(record => {
-        const percentage = (record.amount * 100) / totalAmount;
-        return percentage.toFixed(2); // Limite à deux décimales pour les pourcentages
-    });
 
     if (isLoading || loading || !result) {
         return <Loader />
@@ -1070,6 +1070,402 @@ const Report = () => {
 
     if (error) {
         return <p className=" text-center text-xs text-red-500">Vérifie votre connexion</p>
+    }
+
+    if ((filter && isSunday(startDate) && endDate === null) || (!filter && isSunday(now))) {
+        return <div className=' h-screen bg-gray-200 w-full overflow-y-scroll rounded-t-xl px-4 py-3'>
+            <div className=" w-full flex items-center justify-between">
+                <div className="flex gap-3 items-center">
+                    <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par année</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorYearElFilter}
+                        keepMounted
+                        open={openYearMenuFilter}
+                        onClose={handleCloseYearMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.years?.map((year) => (
+                                <MenuItem key={year} onClick={() => handleFilter(year.toString())} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{year}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-green-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par mois</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorMonthElFilter}
+                        keepMounted
+                        open={openMonthMenuFilter}
+                        onClose={handleCloseMonthMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.months?.map((month) => (
+                                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-gray-300 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par semaine</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorWeekElFilter}
+                        keepMounted
+                        open={openWeekMenuFilter}
+                        onClose={handleCloseWeekMenuFilter}
+                        className=' rounded-xl'
+                    >
+
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
+                    </Menu>
+                    <button className=' bg-yellow-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleRangeClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par date</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorRangeElFilter}
+                        keepMounted
+                        open={openRangeMenuFilter}
+                        onClose={handleCloseRangeMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        <div className=" p-2">
+                            <DatePicker
+                                locale={fr}
+                                selected={startDate}
+                                onChange={onChange}
+                                startDate={startDate}
+                                endDate={endDate}
+                                selectsRange
+                                inline
+                            />
+                            <br />
+                            <button onClick={() => {
+                                if (endDate === null) {
+                                    handleCloseRangeMenuFilter();
+                                    handleFilter(formattedStartDate);
+                                } else {
+                                    handleCloseRangeMenuFilter();
+                                    handleWeekFilter(formattedStartDate, formattedEndDate);
+                                }
+                            }} className=" w-full bg-black text-xs text-white py-2 rounded-md hover:bg-green-500">Valider</button>
+                        </div>
+                    </Menu>
+                    <div className=" bg-blue-200 h-8 rounded-md flex items-center gap-2 px-3 text-xs font-semibold cursor-pointer" onClick={() => {
+                        setFilter(false);
+                        setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+                        setDescription(`Ceci represente l'ensemble des données de toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+                        setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot));
+                    }}>
+                        <IoReload />
+                        <p>Aujourd&rsquo;hui</p>
+                    </div>
+
+                </div>
+
+                <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            </div>
+
+            <div className=" w-full mt-28  text-center">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-8 shadow-sm">
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-amber-100 p-3 rounded-full">
+                            <AiOutlineWarning className="w-8 h-8 text-amber-600" />
+                        </div>
+                    </div>
+
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                        Données indisponibles pour : {currentDate}
+                    </h3>
+
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                        Cette date correspond à un dimanche.
+                    </p>
+                </div>
+            </div>
+        </div>
+    }
+
+    if (filter && filterStats.appointments <= 70 && filterStats.appointments > 0) {
+        return <div className=' h-screen bg-gray-200 w-full overflow-y-scroll rounded-t-xl px-4 py-3'>
+            <div className=" w-full flex items-center justify-between">
+                <div className="flex gap-3 items-center">
+                    <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par année</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorYearElFilter}
+                        keepMounted
+                        open={openYearMenuFilter}
+                        onClose={handleCloseYearMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.years?.map((year) => (
+                                <MenuItem key={year} onClick={() => handleFilter(year.toString())} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{year}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-green-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par mois</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorMonthElFilter}
+                        keepMounted
+                        open={openMonthMenuFilter}
+                        onClose={handleCloseMonthMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.months?.map((month) => (
+                                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-gray-300 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par semaine</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorWeekElFilter}
+                        keepMounted
+                        open={openWeekMenuFilter}
+                        onClose={handleCloseWeekMenuFilter}
+                        className=' rounded-xl'
+                    >
+
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
+                    </Menu>
+                    <button className=' bg-yellow-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleRangeClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par date</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorRangeElFilter}
+                        keepMounted
+                        open={openRangeMenuFilter}
+                        onClose={handleCloseRangeMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        <div className=" p-2">
+                            <DatePicker
+                                locale={fr}
+                                selected={startDate}
+                                onChange={onChange}
+                                startDate={startDate}
+                                endDate={endDate}
+                                selectsRange
+                                inline
+                            />
+                            <br />
+                            <button onClick={() => {
+                                if (endDate === null) {
+                                    handleCloseRangeMenuFilter();
+                                    handleFilter(formattedStartDate);
+                                } else {
+                                    handleCloseRangeMenuFilter();
+                                    handleWeekFilter(formattedStartDate, formattedEndDate);
+                                }
+                            }} className=" w-full bg-black text-xs text-white py-2 rounded-md hover:bg-green-500">Valider</button>
+                        </div>
+                    </Menu>
+                    <div className=" bg-blue-200 h-8 rounded-md flex items-center gap-2 px-3 text-xs font-semibold cursor-pointer" onClick={() => {
+                        setFilter(false);
+                        setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+                        setDescription(`Ceci represente l'ensemble des données de toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+                        setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot));
+                    }}>
+                        <IoReload />
+                        <p>Aujourd&rsquo;hui</p>
+                    </div>
+
+                </div>
+
+                <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            </div>
+
+            <div className=" w-full mt-28  text-center">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-8 shadow-sm">
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-amber-100 p-3 rounded-full">
+                            <AiOutlineWarning className="w-8 h-8 text-amber-600" />
+                        </div>
+                    </div>
+
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                        Données temporairement indisponibles pour : {currentDate}
+                    </h3>
+
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                        Nous avons rencontré des difficultés techniques avec nos serveurs à cette date.
+                        <br />
+                        Nos équipes travaillent activement à synchroniser les données.
+                    </p>
+
+                    <div className="mt-6 pt-4 border-t border-amber-200">
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                            <AiOutlineClockCircle className="w-4 h-4" />
+                            <span>Temps de résolution estimé : 24-48 heures</span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Si le problème persiste, contactez notre support technique
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    if ((filter && filterStats.appointments == 0) || (!filter && result.appointments == 0)) {
+        return <div className=' h-screen bg-gray-200 w-full overflow-y-scroll rounded-t-xl px-4 py-3'>
+            <div className=" w-full flex items-center justify-between">
+                <div className="flex gap-3 items-center">
+                    <button className=' bg-red-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleYearClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par année</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorYearElFilter}
+                        keepMounted
+                        open={openYearMenuFilter}
+                        onClose={handleCloseYearMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.years?.map((year) => (
+                                <MenuItem key={year} onClick={() => handleFilter(year.toString())} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{year}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-green-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleMonthClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par mois</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorMonthElFilter}
+                        keepMounted
+                        open={openMonthMenuFilter}
+                        onClose={handleCloseMonthMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        {
+                            result?.months?.map((month) => (
+                                <MenuItem key={month} onClick={() => handleFilter(format(month, 'MM/yyyy'))} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>{format(month, 'MMMM yyyy', { locale: fr })}</MenuItem>
+                            ))
+                        }
+                    </Menu>
+                    <button className=' bg-gray-300 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleWeekClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par semaine</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorWeekElFilter}
+                        keepMounted
+                        open={openWeekMenuFilter}
+                        onClose={handleCloseWeekMenuFilter}
+                        className=' rounded-xl'
+                    >
+
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[0].split('-')[0], result.weeks[0].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>Cette semaine</MenuItem>
+                        <MenuItem onClick={() => handleWeekFilter(result.weeks[1].split('-')[0], result.weeks[1].split('-')[1])} className=' bg-gray-200 text-gray-500 mx-2 my-1 rounded-full text-xs text-center hover:bg-black hover:text-white'>La semaine passée</MenuItem>
+                    </Menu>
+                    <button className=' bg-yellow-200 text-xs flex gap-2 items-center rounded-md py-2 px-3' aria-controls="fade-menu-filter" aria-haspopup="true" onClick={handleRangeClickFilter}>
+                        <CiFilter />
+                        <p className=' font-semibold' >Filtrer par date</p>
+                    </button>
+                    <Menu
+                        id="fade-menu-filter"
+                        anchorEl={anchorRangeElFilter}
+                        keepMounted
+                        open={openRangeMenuFilter}
+                        onClose={handleCloseRangeMenuFilter}
+                        className=' rounded-xl'
+                    >
+                        <div className=" p-2">
+                            <DatePicker
+                                locale={fr}
+                                selected={startDate}
+                                onChange={onChange}
+                                startDate={startDate}
+                                endDate={endDate}
+                                selectsRange
+                                inline
+                            />
+                            <br />
+                            <button onClick={() => {
+                                if (endDate === null) {
+                                    handleCloseRangeMenuFilter();
+                                    handleFilter(formattedStartDate);
+                                } else {
+                                    handleCloseRangeMenuFilter();
+                                    handleWeekFilter(formattedStartDate, formattedEndDate);
+                                }
+                            }} className=" w-full bg-black text-xs text-white py-2 rounded-md hover:bg-green-500">Valider</button>
+                        </div>
+                    </Menu>
+                    <div className=" bg-blue-200 h-8 rounded-md flex items-center gap-2 px-3 text-xs font-semibold cursor-pointer" onClick={() => {
+                        setFilter(false);
+                        setCurrentDate(`Aujourd'hui : ${format(`${now.toLocaleDateString('fr-FR').split('/')[1]}/${now.toLocaleDateString('fr-FR').split('/')[0]}/${now.toLocaleDateString('fr-FR').split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
+                        setDescription(`Ceci represente l'ensemble des données de toutes les agences pour la date d'aujourd'hui ${new Date().toLocaleDateString('fr-FR')}`);
+                        setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot));
+                    }}>
+                        <IoReload />
+                        <p>Aujourd&rsquo;hui</p>
+                    </div>
+
+                </div>
+
+                <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
+            </div>
+
+            <div className=" w-full mt-28  text-center">
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-8 shadow-sm">
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-amber-100 p-3 rounded-full">
+                            <AiOutlineWarning className="w-8 h-8 text-amber-600" />
+                        </div>
+                    </div>
+
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                        Données indisponibles pour : {currentDate}
+                    </h3>
+
+                    <p className="text-gray-600 mb-6 leading-relaxed">
+                        Données non disponibles pour cette date. soit c'est un jour férié, soit il y a eu un problème technique.
+                        <br />
+                        Veuillez réessayer plus tard ou contacter le support technique s'il s'agit d'un problème.
+                    </p>
+
+                    <div className="mt-6 pt-4 border-t border-amber-200">
+                        <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                            <AiOutlineClockCircle className="w-4 h-4" />
+                            <span>Temps de résolution estimé : 24-48 heures</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 
     return (
