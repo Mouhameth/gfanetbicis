@@ -67,47 +67,47 @@ const Setting = () => {
   return (
     <div className=' bg-slate-100 h-screen  w-full rounded-t-xl'>
       <div className='flex flex-col justify-center items-center'>
-                  <div className="  w-10 h-10 border-[1px] border-gray-500 flex justify-center rounded-md items-center text-gray-500">
-                    <FaKey />
-                  </div>
-                  <p className=" text-lg font-bold text-gray-500 my-2">Choisir un mot de passe</p>
-                  <p className=" text-sm text-gray-500">Le mot de passe doit comporter au moins 6 caractères</p>
-                  <form className=" mx-auto" onSubmit={handleSubmit(onSubmit)}>
+        <div className="  w-10 h-10 border-[1px] border-gray-500 flex justify-center rounded-md items-center text-gray-500">
+          <FaKey />
+        </div>
+        <p className=" text-lg font-bold text-gray-500 my-2">Choisir un mot de passe</p>
+        <p className=" text-sm text-gray-500">Le mot de passe doit comporter au moins 6 caractères</p>
+        <form className=" mx-auto" onSubmit={handleSubmit(onSubmit)}>
 
-                    <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
-                      <input
-                        className="flex-1 focus:outline-none"
-                        type="password"
-                        placeholder="Mot de passe actuel"
-                        {...register("initial")}
-                      />
-                    </div>
-                    <p className=" text-xs text-red-500">{errors.initial?.message}</p>
+          <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
+            <input
+              className="flex-1 focus:outline-none"
+              type="password"
+              placeholder="Mot de passe actuel"
+              {...register("initial")}
+            />
+          </div>
+          <p className=" text-xs text-red-500">{errors.initial?.message}</p>
 
-                    <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
+          <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
 
-                      <input
-                        className="flex-1 focus:outline-none"
-                        type="password"
-                        placeholder="Nouveau mot de passe"
-                        {...register("password")}
-                      />
-                    </div>
-                    <p className=" text-xs text-red-500">{errors.password?.message}</p>
+            <input
+              className="flex-1 focus:outline-none"
+              type="password"
+              placeholder="Nouveau mot de passe"
+              {...register("password")}
+            />
+          </div>
+          <p className=" text-xs text-red-500">{errors.password?.message}</p>
 
-                    <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
-                      <input
-                        className="flex-1 focus:outline-none"
-                        type="password"
-                        placeholder="Confirmer mot de passe"
-                        {...register("passwordConfirmation")}
-                      />
-                    </div>
-                    <p className=" text-xs text-red-500">{errors.passwordConfirmation?.message}</p>
+          <div className="flex items-center border border-gray-500 bg-white rounded dark:border-gray-500 w-80 lg:w-96 p-3 my-4 text-xs placeholder:text-gray-500 focus:outline-gray-500">
+            <input
+              className="flex-1 focus:outline-none"
+              type="password"
+              placeholder="Confirmer mot de passe"
+              {...register("passwordConfirmation")}
+            />
+          </div>
+          <p className=" text-xs text-red-500">{errors.passwordConfirmation?.message}</p>
 
-                    {loading == false && <input className=" bg-black mt-4 p-3 text-xs font-semibold text-white lg:w-96 w-80 hover:bg-green-500 rounded-md cursor-pointer" value="Valider" type="submit" />}
-                  </form>
-                </div>
+          {loading == false && <input className=" bg-black mt-4 p-3 text-xs font-semibold text-white lg:w-96 w-80 hover:bg-green-500 rounded-md cursor-pointer" value="Valider" type="submit" />}
+        </form>
+      </div>
     </div>
   )
 }

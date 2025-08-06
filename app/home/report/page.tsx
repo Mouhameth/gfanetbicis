@@ -886,6 +886,7 @@ const Home = () => {
     // Ajouter les en-têtes des colonnes
 
     const headers = {
+      'Date': 'Date',
       'Heure d\'arrivée': 'Heure d\'arrivée',
       'No d\'arrivée': 'No d\'arrivée',
       'No de ticket': 'No de ticket',
@@ -902,6 +903,7 @@ const Home = () => {
     for (let index = 0; index < list.appointmentList.length; index++) {
       const element = list.appointmentList[index];
       const data = {
+        'Date': element.date,
         'Heure d\'arrivée': element.time,
         'No d\'arrivée': element.num,
         'No de ticket': element.num,
