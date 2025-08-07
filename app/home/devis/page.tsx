@@ -109,7 +109,7 @@ const Home = () => {
     const onSubmit = useCallback(async (data: FormData) => {
         try {
             setLoading(true);
-            data.text = `DEVIS: ${data.devis} , ACHAT : ${data.buy} VENTE : ${data.sell}.`
+            data.text = `DEVISE: ${data.devis} , ACHAT : ${data.buy} VENTE : ${data.sell}.`
             const res = await axiosAuth.post(url, data);
             if (res.status == 201) {
                 reset();
@@ -133,7 +133,7 @@ const Home = () => {
         try {
             setLoading(true);
             handleCloseEdit();
-            data.text = `DEVIS: ${data.devis} , ACHAT : ${data.buy} VENTE : ${data.sell}.`
+            data.text = `DEVISE: ${data.devis} , ACHAT : ${data.buy} VENTE : ${data.sell}.`
             const res = await axiosAuth.put(`${url}/update`, data);
             if (res.status == 200) {
                 reset();
