@@ -38,7 +38,7 @@ const rootItems = [
         auth: true
     },
     {
-        label: "Devis",
+        label: "Devise",
         href: "/home/devis",
         icon: BsCurrencyExchange
     },
@@ -92,7 +92,7 @@ const adminItems = [
         auth: true
     },
     {
-        label: "Devis",
+        label: "Devise",
         href: "/home/devis",
         icon: BsCurrencyExchange
     },
