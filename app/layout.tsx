@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Gfanet",
   description: "Gfanet app",
+  other: {
+    "google": "notranslate"
+  },
   icons: {
     icon: '/favicon.ico'
   },
