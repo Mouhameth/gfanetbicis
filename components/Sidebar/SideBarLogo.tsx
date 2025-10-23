@@ -1,5 +1,4 @@
-import { BsTwitter } from "react-icons/bs"
-import bank from "@/assets/bank.jpg"
+import bank from "@/assets/bank.jpeg"
 import Image from "next/image"
 
 const SidebarLogo = () => {

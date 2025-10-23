@@ -1,8 +1,6 @@
 import { useRouter, usePathname } from "next/navigation";
 import React, { useCallback } from "react";
 import { IconType } from "react-icons";
-import { BsDot } from "react-icons/bs";
-import {AiFillCheckCircle} from "react-icons/ai";
 
 interface SidebarItemProps {
  label: string;
