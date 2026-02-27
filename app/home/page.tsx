@@ -10,7 +10,7 @@ import {
     ArcElement,
     Legend
 } from 'chart.js';
-import { Doughnut, Line } from 'react-chartjs-2';
+import { Doughnut, Line, Bar } from 'react-chartjs-2';
 import Loader from "@/components/common/Loader";
 import useSWR from "swr";
 import useAxiosAuth from "@/hooks/useAxiosAuth";
@@ -35,6 +35,7 @@ import { GoClock } from "react-icons/go";
 import { IoIosTrendingUp } from "react-icons/io";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
 import { FaSquarePollVertical } from "react-icons/fa6";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 
 ChartJS.register(
@@ -44,7 +45,8 @@ ChartJS.register(
     Title,
     Tooltip,
     Legend,
-    ArcElement
+    ArcElement,
+    ChartDataLabels
 );
 
 type StatCardProps = {
@@ -101,6 +103,8 @@ const Report = () => {
     }, [startDate]); // Dépend de startDate
 
     useEffect(() => {
+        console.log(result);
+
         if (result?.appointmentsByHourSlot && result?.servingAppointmentsByHourSlot) {
             setWaitingAppointmentsOfficeByHourSlot(
                 calculateWaitings(result.appointmentsByHourSlot, result.servingAppointmentsByHourSlot)
@@ -140,7 +144,8 @@ const Report = () => {
         totatlNotInServing: 0,
         waitings: 0,
         receives: 0,
-        appointments: 0
+        appointments: 0,
+        meanWaitingTimeAndSubservices: []
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
@@ -190,6 +195,8 @@ const Report = () => {
 
             const res = await axiosAuth.post<AllStats>(url, JSON.stringify({ date: date }));
             if (res.status == 200) {
+
+                console.log(res.data);
                 setFilterStats(res.data);
                 setWaitingAppointmentsOfficeByHourSlot(calculateWaitings(res.data.appointmentsByHourSlot, res.data.servingAppointmentsByHourSlot));
             }
@@ -1102,6 +1109,14 @@ const Report = () => {
         return colors;
     };
 
+    // Fonction pour convertir les minutes en format HH:MM:SS
+    const formatMinutesToTime = (minutes: number): string => {
+        const hours = Math.floor(minutes / 60);
+        const mins = Math.floor(minutes % 60);
+        const secs = Math.floor((minutes * 60) % 60);
+        return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    };
+
     const isSunday = (date: Date) => {
         const today = new Date(date);
         const dayOfWeek = today.getDay();
@@ -1898,6 +1913,11 @@ const Report = () => {
                             }}
                             options={{
                                 responsive: true,
+                                plugins: {
+                                    datalabels: {
+                                        display: false
+                                    }
+                                },
                                 scales: {
                                     y: {
                                         type: 'linear',
@@ -1951,6 +1971,11 @@ const Report = () => {
                             }}
                                 options={{
                                     responsive: true,
+                                    plugins: {
+                                        datalabels: {
+                                            display: false
+                                        }
+                                    },
                                     scales: {
                                         y: {
                                             type: 'linear',
@@ -1978,6 +2003,1286 @@ const Report = () => {
                             />
                         }
                     </div>
+                </div>
+            </div>
+
+            {/* Section Délais clients rapportés au nombre de caisses par agence */}
+            <div className="flex flex-col my-3">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                    <h2 className="text-sm font-semibold text-center">
+                        Délais clients rapportés au nombre de caisses par agence
+                    </h2>
+                </div>
+
+                <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
+                    {filter === false ? (
+                        result?.meanWaitingTimeAndSubservices && result.meanWaitingTimeAndSubservices.length > 0 ? (
+                            <div className="relative">
+                                {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
+                                <div style={{ height: '120px', marginBottom: '1px', marginLeft: '6px' }}>
+                                    <Line
+                                        data={{
+                                            labels: result.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de caisses',
+                                                    data: result.meanWaitingTimeAndSubservices.map(record => record.subServices),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: {
+                                                            size: 11,
+                                                            weight: 'bold'
+                                                        },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Caisses: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: false,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...result.meanWaitingTimeAndSubservices.map(r => r.subServices)) + 2,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Graphique des barres (temps d'attente) - EN BAS */}
+                                <div style={{ height: '280px', marginLeft: '-8px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: result.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Temps d\'attente',
+                                                    data: result.meanWaitingTimeAndSubservices.map(record => record.time),
+                                                    backgroundColor: '#F4A261',
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    yAxisID: 'y',
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            // Si la valeur est petite (moins de 30% du max), mettre au-dessus
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 1 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return formatMinutesToTime(value);
+                                                        },
+                                                        font: {
+                                                            weight: 'bold',
+                                                            size: 9
+                                                        },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Temps: ' + formatMinutesToTime(context.parsed.y);
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    },
+                                                    ticks: {
+                                                        font: {
+                                                            size: 10
+                                                        }
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    ) : (
+                        filterStats?.meanWaitingTimeAndSubservices && filterStats.meanWaitingTimeAndSubservices.length > 0 ? (
+                            <div className="relative">
+                                {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
+                                <div style={{ height: '120px', marginBottom: '1px', marginLeft: '6px' }}>
+                                    <Line
+                                        data={{
+                                            labels: filterStats.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de caisses',
+                                                    data: filterStats.meanWaitingTimeAndSubservices.map(record => record.subServices),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: {
+                                                            size: 11,
+                                                            weight: 'bold'
+                                                        },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Caisses: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: false,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...filterStats.meanWaitingTimeAndSubservices.map(r => r.subServices)) + 2,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Graphique des barres (temps d'attente) - EN BAS */}
+                                <div style={{ height: '280px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: filterStats.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Temps d\'attente',
+                                                    data: filterStats.meanWaitingTimeAndSubservices.map(record => record.time),
+                                                    backgroundColor: '#F4A261',
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            // Si la valeur est petite (moins de 30% du max), mettre au-dessus
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 1 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return formatMinutesToTime(value);
+                                                        },
+                                                        font: {
+                                                            weight: 'bold',
+                                                            size: 9
+                                                        },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Temps: ' + formatMinutesToTime(context.parsed.y);
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    },
+                                                    ticks: {
+                                                        font: {
+                                                            size: 10
+                                                        }
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Confirmité aux objectifs sur les volumes de tickets */}
+            <div className="flex flex-col my-3">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                    <h2 className="text-sm font-semibold text-center">
+                        Confirmité aux objectifs sur les volumes de tickets
+                    </h2>
+                </div>
+
+                <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
+                    {filter === false ? (
+                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (
+                            <div className="relative">
+                                {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
+                                <div style={{ height: '124px', position: 'relative' }}>
+                                    <Line
+                                        data={{
+                                            labels: result.totalInTimeByOffice.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de tickets',
+                                                    data: result.totalInTimeByOffice.map(record => record.receives),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: {
+                                                            size: 11,
+                                                            weight: 'bold'
+                                                        },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: {
+                                                    top: 22,
+                                                    left: 14
+                                                }
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Tickets: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: false,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...result.totalInTimeByOffice.map(r => r.receives)) + 1.2,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Graphique des barres (pourcentage tickets en normes) - EN BAS */}
+                                <div style={{ height: '280px', marginLeft: '-8px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: result.totalInTimeByOffice.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Pourcentage de tickets en normes',
+                                                    data: result.totalInTimeByOffice.map(record =>
+                                                        record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                    ),
+                                                    backgroundColor: '#E0E0E0',
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    yAxisID: 'y',
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            // Si la valeur est petite (moins de 30% du max), mettre au-dessus
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 4 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return Math.round(Number.parseFloat(value.toFixed(1))) + '%';
+                                                        },
+                                                        font: {
+                                                            weight: 'bold',
+                                                            size: 9
+                                                        },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Pourcentage: ' + Math.round(Number.parseFloat(context.parsed.y.toFixed(1))) + '%';
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    },
+                                                    ticks: {
+                                                        font: {
+                                                            size: 10
+                                                        }
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    max: 100,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    ) : (
+                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (
+                            <div className="relative">
+                                {/* Graphique de la ligne noire (nombre de tickets) - EN HAUT */}
+                                <div style={{ height: '120px', position: 'relative' }}>
+                                    <Line
+                                        data={{
+                                            labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de tickets',
+                                                    data: filterStats.totalInTimeByOffice.map(record => record.receives),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: {
+                                                            size: 11,
+                                                            weight: 'bold'
+                                                        },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: {
+                                                    top: 20,
+                                                    left: 14
+                                                }
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Tickets: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: false,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...filterStats.totalInTimeByOffice.map(r => r.receives)) + 1.2,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Graphique des barres (pourcentage tickets en normes) - EN BAS */}
+                                <div style={{ height: '280px', marginLeft: '-8px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Pourcentage de tickets en normes',
+                                                    data: filterStats.totalInTimeByOffice.map(record =>
+                                                        record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                    ),
+                                                    backgroundColor: '#E0E0E0',
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    yAxisID: 'y',
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            // Si la valeur est petite (moins de 30% du max), mettre au-dessus
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 4 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return Math.round(Number.parseFloat(value.toFixed(1))) + '%';
+                                                        },
+                                                        font: {
+                                                            weight: 'bold',
+                                                            size: 9
+                                                        },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: {
+                                                padding: 0
+                                            },
+                                            plugins: {
+                                                legend: {
+                                                    display: false,
+                                                },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function (context) {
+                                                            return 'Pourcentage: ' + Math.round(Number.parseFloat(context.parsed.y.toFixed(1))) + '%';
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: {
+                                                    display: true
+                                                }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: {
+                                                        display: false,
+                                                        offset: true
+                                                    },
+                                                    ticks: {
+                                                        font: {
+                                                            size: 10
+                                                        }
+                                                    }
+                                                },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    max: 100,
+                                                    grid: {
+                                                        display: false
+                                                    }
+                                                }
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Section Délais d'attente et de traitement */}
+            <div className="flex flex-col my-3">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                    <h2 className="text-sm font-semibold text-center">Délais d'attente et de traitement</h2>
+                </div>
+                <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 px-4 pb-8">
+                    {filter === false ? (
+                        result?.totalByOffices && result.totalByOffices.length > 0 ? (
+                            <div style={{ height: '400px' }}>
+                                <Bar
+                                    data={{
+                                        labels: result.totalByOffices.map(record => record.name),
+                                        datasets: [
+                                            {
+                                                label: 'Temps d\'attente',
+                                                data: result.totalByOffices.map(record => record.meanWaitingTime),
+                                                backgroundColor: '#E0E0E0',
+                                                borderColor: '#E0E0E0',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return formatMinutesToTime(value);
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            },
+                                            {
+                                                label: 'Temps de traitement',
+                                                data: result.totalByOffices.map(record => record.meanServingTime),
+                                                backgroundColor: '#F4A261',
+                                                borderColor: '#F4A261',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return formatMinutesToTime(value);
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            }
+                                        ] as any
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: true,
+                                                position: 'top',
+                                                labels: {
+                                                    font: {
+                                                        size: 12
+                                                    }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return context.dataset.label + ': ' + formatMinutesToTime(context.parsed.y);
+                                                    }
+                                                }
+                                            },
+                                            datalabels: {
+                                                display: true
+                                            }
+                                        },
+                                        scales: {
+                                            x: {
+                                                display: true,
+                                                grid: {
+                                                    display: false
+                                                },
+                                                ticks: {
+                                                    font: {
+                                                        size: 10
+                                                    }
+                                                }
+                                            },
+                                            y: {
+                                                display: false,
+                                                grid: {
+                                                    display: false
+                                                }
+                                            }
+                                        },
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    ) : (
+                        filterStats?.totalByOffices && filterStats.totalByOffices.length > 0 ? (
+                            <div style={{ height: '400px' }}>
+                                <Bar
+                                    data={{
+                                        labels: filterStats.totalByOffices.map(record => record.name),
+                                        datasets: [
+                                            {
+                                                label: 'Temps d\'attente',
+                                                data: filterStats.totalByOffices.map(record => record.meanWaitingTime),
+                                                backgroundColor: '#E0E0E0',
+                                                borderColor: '#E0E0E0',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 1,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return formatMinutesToTime(value);
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            },
+                                            {
+                                                label: 'Temps de traitement',
+                                                data: filterStats.totalByOffices.map(record => record.meanServingTime),
+                                                backgroundColor: '#F4A261',
+                                                borderColor: '#F4A261',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.9,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return formatMinutesToTime(value);
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            }
+                                        ] as any
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: true,
+                                                position: 'top',
+                                                labels: {
+                                                    font: {
+                                                        size: 12
+                                                    }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return context.dataset.label + ': ' + formatMinutesToTime(context.parsed.y);
+                                                    }
+                                                }
+                                            },
+                                            datalabels: {
+                                                display: true
+                                            }
+                                        },
+                                        scales: {
+                                            x: {
+                                                display: true,
+                                                grid: {
+                                                    display: false
+                                                },
+                                                ticks: {
+                                                    font: {
+                                                        size: 10
+                                                    }
+                                                }
+                                            },
+                                            y: {
+                                                display: false
+                                            }
+                                        },
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Section Conformité aux objectifs */}
+            <div className="flex flex-col my-3">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                    <h2 className="text-sm font-semibold text-center">Conformité aux objectifs</h2>
+                </div>
+                <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 px-4 pb-8">
+                    {filter === false ? (
+                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (
+                            <div style={{ height: '400px' }}>
+                                <Bar
+                                    data={{
+                                        labels: result.totalInTimeByOffice.map(record => record.name),
+                                        datasets: [
+                                            {
+                                                label: 'Conformité attente',
+                                                data: result.totalInTimeByOffice.map(record =>
+                                                    record.receives > 0 ? (record.waitings / record.receives) * 100 : 0
+                                                ),
+                                                backgroundColor: '#E0E0E0',
+                                                borderColor: '#E0E0E0',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return Math.floor(Number.parseFloat(value.toFixed(1))) + '%';
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            },
+                                            {
+                                                label: 'Conformité traitement',
+                                                data: result.totalInTimeByOffice.map(record =>
+                                                    record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                ),
+                                                backgroundColor: '#F4A261',
+                                                borderColor: '#F4A261',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return Math.floor(Number.parseFloat(value.toFixed(1))) + '%';
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            }
+                                        ] as any
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: true,
+                                                position: 'top',
+                                                labels: {
+                                                    font: {
+                                                        size: 12
+                                                    }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                                    }
+                                                }
+                                            },
+                                            datalabels: {
+                                                display: true
+                                            }
+                                        },
+                                        scales: {
+                                            x: {
+                                                display: true,
+                                                grid: {
+                                                    display: false
+                                                },
+                                                ticks: {
+                                                    font: {
+                                                        size: 10
+                                                    }
+                                                }
+                                            },
+                                            y: {
+                                                display: false
+                                            }
+                                        },
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    ) : (
+                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (
+                            <div style={{ height: '400px' }}>
+                                <Bar
+                                    data={{
+                                        labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                        datasets: [
+                                            {
+                                                label: 'Conformité attente',
+                                                data: filterStats.totalInTimeByOffice.map(record =>
+                                                    record.receives > 0 ? (record.waitings / record.receives) * 100 : 0
+                                                ),
+                                                backgroundColor: '#E0E0E0',
+                                                borderColor: '#E0E0E0',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return Math.floor(Number.parseFloat(value.toFixed(1))) + '%';
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            },
+                                            {
+                                                label: 'Conformité traitement',
+                                                data: filterStats.totalInTimeByOffice.map(record =>
+                                                    record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                ),
+                                                backgroundColor: '#F4A261',
+                                                borderColor: '#F4A261',
+                                                borderWidth: 1,
+                                                borderRadius: 4,
+                                                barPercentage: 0.8,
+                                                categoryPercentage: 0.7,
+                                                datalabels: {
+                                                    color: '#000',
+                                                    rotation: -90,
+                                                    anchor: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    align: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 'end' : 'center';
+                                                    },
+                                                    offset: (context: any) => {
+                                                        const value = context.dataset.data[context.dataIndex];
+                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        return value < maxValue * 0.3 ? 4 : 0;
+                                                    },
+                                                    formatter: (value: number) => {
+                                                        if (value === 0) return null;
+                                                        return Math.floor(Number.parseFloat(value.toFixed(1))) + '%';
+                                                    },
+                                                    font: {
+                                                        weight: 'bold',
+                                                        size: 9
+                                                    },
+                                                    clip: false
+                                                }
+                                            }
+                                        ] as any
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        plugins: {
+                                            legend: {
+                                                display: true,
+                                                position: 'top',
+                                                labels: {
+                                                    font: {
+                                                        size: 12
+                                                    }
+                                                }
+                                            },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context) {
+                                                        return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                                                    }
+                                                }
+                                            },
+                                            datalabels: {
+                                                display: true
+                                            }
+                                        },
+                                        scales: {
+                                            x: {
+                                                display: true,
+                                                grid: {
+                                                    display: false
+                                                },
+                                                ticks: {
+                                                    font: {
+                                                        size: 10
+                                                    }
+                                                }
+                                            },
+                                            y: {
+                                                display: false
+                                            }
+                                        },
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    )}
                 </div>
             </div>
 

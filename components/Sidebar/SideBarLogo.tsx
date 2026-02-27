@@ -13,7 +13,7 @@ const SidebarLogo = () => {
     cursor-pointer
     transition
     ">
-      <Image src={bank} alt={""} />
+      <Image src={bank} alt={"cbao"} />
     </div>
   )
 }

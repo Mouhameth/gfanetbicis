@@ -25,6 +25,7 @@ interface AllStats {
     waitings: number;
     receives: number;
     appointments: number;
+    meanWaitingTimeAndSubservices: MWTSRecd[];
 }
 
 interface Rec {
@@ -35,4 +36,10 @@ interface Rec {
 interface Slot {
     time: string;
     data: Rec[];
+}
+
+interface MWTSRecd {
+    name: string;
+    time: number;
+    subServices: number;
 }
