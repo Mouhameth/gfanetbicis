@@ -2734,7 +2734,7 @@ const Report = () => {
             {/* Section Délais d'attente et de traitement */}
             <div className="flex flex-col my-3">
                 <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
-                    <h2 className="text-sm font-semibold text-center">Délais d'attente et de traitement</h2>
+                    <h2 className="text-sm font-semibold text-center">Délais d&apos;attente et de traitement</h2>
                 </div>
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 px-4 pb-8">
                     {filter === false ? (
