@@ -17,7 +17,7 @@ const Header = () => {
                     <LiaCopyrightSolid size={18} className=" text-gray-400" />
                     {/* <h2>{useChangeTitle.title}</h2> */}
                     <p className=' text-[12px] text-gray-500'>
-                        (Gfanet <span className=' font-semibold'>B</span> by gigaelectronic.net)
+                        Gfanet <span className=' font-semibold'>B</span> by gigaelectronic.net
                     </p>
 
                 </div>

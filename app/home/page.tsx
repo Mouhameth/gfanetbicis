@@ -145,11 +145,14 @@ const Report = () => {
         waitings: 0,
         receives: 0,
         appointments: 0,
-        meanWaitingTimeAndSubservices: []
+        meanWaitingTimeAndSubservices: [],
+        globalServiceMetrics: []
     }
 
     const [filterStats, setFilterStats] = useState(emptyStats);
     const [filter, setFilter] = useState(false);
+    const [ticketThreshold, setTicketThreshold] = useState(0);
+    const [showTicketFilter, setShowTicketFilter] = useState(false);
     const [loading, setLoading] = useState(false);
     const [anchorWeekElFilter, setAnchorWeekElFilter] = useState(null);
     const openWeekMenuFilter = Boolean(anchorWeekElFilter);
@@ -381,13 +384,25 @@ const Report = () => {
         const buildTicketsByOfficeSheet = () => {
             const data: any[] = [];
 
+            // Filtrage par seuil de tickets
+            const filteredOffices = ticketThreshold === 0
+                ? stats.appointmentsByOffice
+                : stats.appointmentsByOffice.filter((office: any) => {
+                    const inTime = stats.totalInTimeByOffice?.find((o: any) => o.name === office.name);
+                    return (inTime?.receives ?? 0) >= ticketThreshold;
+                });
+
+            const focusLabel = ticketThreshold > 0
+                ? ` — Focus agences ≥ ${ticketThreshold.toLocaleString()} tickets`
+                : '';
+
             // Titre et description
-            data.push({ '': createStyledCell('Nombre de tickets par Agence', styles.title) });
+            data.push({ '': createStyledCell(`Nombre de tickets par Agence${focusLabel}`, styles.title) });
             data.push({ '': createStyledCell(description, styles.description) });
             data.push(createEmptyRow());
 
-            // Boucle sur chaque agence
-            stats.appointmentsByOffice.forEach((office: any, index: number) => {
+            // Boucle sur les agences filtrées
+            filteredOffices.forEach((office: any) => {
                 // Nom de l'agence
                 data.push({ '': createStyledCell(office.name, styles.subHeader) });
 
@@ -398,9 +413,9 @@ const Report = () => {
                     'En attente': createStyledCell('En attente', styles.header)
                 });
 
-                // Données de l'agence
-                const servedAmount = stats.serveAppointmentsByOffice[index]?.amount || 0;
-                const waitingAmount = stats.waitingAppointmentsByOffice[index]?.amount || 0;
+                // Données de l'agence (lookup par nom)
+                const servedAmount = stats.serveAppointmentsByOffice?.find((o: any) => o.name === office.name)?.amount || 0;
+                const waitingAmount = stats.waitingAppointmentsByOffice?.find((o: any) => o.name === office.name)?.amount || 0;
 
                 data.push({
                     'Reçu': office.amount || 0,
@@ -630,16 +645,18 @@ const Report = () => {
                 icon={IoTrendingUpOutline}
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full table-fixed">
+                    <table className="w-full">
                         <thead>
-                            <tr className=" bg-black">
-                                <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                            <tr className="bg-black">
+                                <th className="px-3 py-2 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[60px]">Heure</th>
                                 {
                                     result?.appointmentsByHourSlot[0].data.map((office) => (
-                                        <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                        <th key={office.name} className="px-1 text-white text-xs font-semibold text-center" style={{ height: '90px', verticalAlign: 'bottom', paddingBottom: '8px' }}>
+                                            <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'inline-block', whiteSpace: 'nowrap' }}>{office.name}</span>
+                                        </th>
                                     ))
                                 }
-                                <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                                <th className="px-3 py-2 bg-green-500 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[50px]">Total</th>
                             </tr>
                         </thead>
                         {result && result.appointmentsByHourSlot.length > 0 && filter == false ? <> {
@@ -747,16 +764,18 @@ const Report = () => {
                 icon={GoClock}
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full table-fixed">
+                    <table className="w-full">
                         <thead>
-                            <tr className=" bg-black">
-                                <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                            <tr className="bg-black">
+                                <th className="px-3 py-2 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[60px]">Heure</th>
                                 {
                                     result?.appointmentsByHourSlot[0].data.map((office) => (
-                                        <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                        <th key={office.name} className="px-1 text-white text-xs font-semibold text-center" style={{ height: '90px', verticalAlign: 'bottom', paddingBottom: '8px' }}>
+                                            <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'inline-block', whiteSpace: 'nowrap' }}>{office.name}</span>
+                                        </th>
                                     ))
                                 }
-                                <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                                <th className="px-3 py-2 bg-green-500 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[50px]">Total</th>
                             </tr>
                         </thead>
                         {
@@ -815,16 +834,18 @@ const Report = () => {
                 icon={FaUsers}
             >
                 <div className="overflow-x-auto">
-                    <table className="w-full table-fixed">
+                    <table className="w-full">
                         <thead>
-                            <tr className=" bg-black">
-                                <th className="w-1/2 px-3 py-4 text-left text-white text-xs font-semibold">Heure</th>
+                            <tr className="bg-black">
+                                <th className="px-3 py-2 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[60px]">Heure</th>
                                 {
                                     result?.servingAppointmentsByHourSlot[0].data.map((office) => (
-                                        <th key={office.name} className="w-1/2  py-4 text-left text-white text-xs font-semibold">{office.name}</th>
+                                        <th key={office.name} className="px-1 text-white text-xs font-semibold text-center" style={{ height: '90px', verticalAlign: 'bottom', paddingBottom: '8px' }}>
+                                            <span style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)', display: 'inline-block', whiteSpace: 'nowrap' }}>{office.name}</span>
+                                        </th>
                                     ))
                                 }
-                                <th className="w-1/3 py-4 px-3 bg-green-500 text-left text-white text-xs font-semibold">Total</th>
+                                <th className="px-3 py-2 bg-green-500 text-left text-white text-xs font-semibold whitespace-nowrap min-w-[50px]">Total</th>
                             </tr>
                         </thead>
                         {result && result.servingAppointmentsByHourSlot.length > 0 && filter == false ? <> {
@@ -1116,6 +1137,22 @@ const Report = () => {
         const secs = Math.floor((minutes * 60) % 60);
         return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
     };
+
+    const getReceivesByName = (name: string): number => {
+        const data = filter === false ? result?.totalInTimeByOffice : filterStats?.totalInTimeByOffice;
+        return data?.find(o => o.name === name)?.receives ?? 0;
+    };
+
+    const isAboveThreshold = (name: string): boolean => {
+        if (ticketThreshold === 0) return true;
+        return getReceivesByName(name) >= ticketThreshold;
+    };
+
+    const barColor = (name: string, baseColor: string): string =>
+        isAboveThreshold(name) ? baseColor : 'rgba(200,200,200,0.2)';
+
+    const pointColor = (name: string): string =>
+        isAboveThreshold(name) ? 'rgba(0,0,0,1)' : 'rgba(200,200,200,0.3)';
 
     const isSunday = (date: Date) => {
         const today = new Date(date);
@@ -1627,11 +1664,142 @@ const Report = () => {
                         <IoReload />
                         <p>Aujourd&rsquo;hui</p>
                     </div>
+                    <button
+                        className={`h-8 text-xs flex gap-2 items-center rounded-md py-2 px-3 font-semibold transition-all ${ticketThreshold > 0 ? 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-md shadow-indigo-200' : 'bg-gray-300 text-gray-700 border border-gray-200 hover:from-indigo-100 hover:to-violet-100'}`}
+                        onClick={() => setShowTicketFilter(v => !v)}
+                    >
+                        <MdBarChart />
+                        <p>Focus agences{ticketThreshold > 0 ? ` ≥ ${ticketThreshold.toLocaleString()}` : ''}</p>
+                    </button>
 
                 </div>
 
                 <button onClick={exportToExcel} className=" bg-green-700 rounded-md py-2 px-3 text-white text-xs flex items-center gap-2"><RiFileExcel2Fill />Exporter</button>
             </div>
+
+            {/* Panneau filtre focus agences */}
+            {showTicketFilter && (() => {
+                const data = filter === false ? result?.totalInTimeByOffice : filterStats?.totalInTimeByOffice;
+                if (!data || data.length === 0) return null;
+                const aboveCount = ticketThreshold === 0 ? data.length : data.filter(o => o.receives >= ticketThreshold).length;
+                const maxTickets = Math.max(...data.map(o => o.receives));
+                return (
+                    <div className="bg-white rounded-lg border border-gray-200 px-5 py-4 mb-2 shadow-sm">
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-gray-700">Seuil minimum de tickets</span>
+                                <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${ticketThreshold > 0 ? 'bg-gray-800 text-white' : 'bg-gray-100 text-gray-500'}`}>
+                                    {ticketThreshold > 0 ? `${aboveCount} agence${aboveCount > 1 ? 's' : ''} ≥ ${ticketThreshold.toLocaleString()} tickets` : `Toutes les agences (${data.length})`}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-lg font-bold text-gray-800 w-20 text-right">
+                                    {ticketThreshold === 0 ? '—' : ticketThreshold.toLocaleString()}
+                                </span>
+                                {ticketThreshold > 0 && (
+                                    <button
+                                        onClick={() => setTicketThreshold(0)}
+                                        className="text-xs text-gray-400 hover:text-gray-700 underline transition-colors"
+                                    >
+                                        Réinitialiser
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                        {(() => {
+                            const inZone1 = ticketThreshold <= 100;
+                            // Zone active = toujours dans les 75% gauche du track
+                            const handlePos = inZone1
+                                ? (ticketThreshold / 100) * 0.75
+                                : ((ticketThreshold - 100) / 9900) * 0.75;
+                            const compute = (e: React.PointerEvent<HTMLDivElement>) => {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                                if (inZone1) {
+                                    // Zone1 active : 0–75% = 0–100 (step 1), 75–100% = 100–10000 (step 50)
+                                    if (pos <= 0.75) return Math.round((pos / 0.75) * 100);
+                                    return Math.round((100 + ((pos - 0.75) / 0.25) * 9900) / 50) * 50;
+                                } else {
+                                    // Zone2 active : 0–75% = 100–10000 (step 50), 75–100% = 0–100 (step 1)
+                                    if (pos <= 0.75) return Math.round((100 + (pos / 0.75) * 9900) / 50) * 50;
+                                    return Math.round(((pos - 0.75) / 0.25) * 100);
+                                }
+                            };
+                            return (
+                                <>
+                                    {/* Track bilinéaire */}
+                                    <div
+                                        className="relative w-full h-6 flex items-center cursor-pointer select-none my-2"
+                                        onPointerDown={e => { setTicketThreshold(compute(e)); (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId); }}
+                                        onPointerMove={e => { if (e.buttons === 1) setTicketThreshold(compute(e)); }}
+                                    >
+                                        {/* Track fond */}
+                                        <div className="absolute inset-x-0 h-2 rounded-full" style={{ overflow: 'hidden' }}>
+                                            {/* Zone active (toujours à gauche, 75%) */}
+                                            <div className="absolute h-full" style={{ left: 0, width: '75%', background: '#e0e7ff' }} />
+                                            {/* Zone compressée (toujours à droite, 25%) */}
+                                            <div className="absolute h-full" style={{ left: '75%', width: '25%', background: '#f3f4f6' }} />
+                                            {/* Remplissage */}
+                                            <div className="absolute h-full" style={{ width: `${handlePos * 100}%`, background: 'linear-gradient(to right, #6366f1, #4f46e5)', borderRadius: '9999px 0 0 9999px' }} />
+                                        </div>
+                                        {/* Séparateur fixe à 75% */}
+                                        <div className="absolute h-4 w-px bg-gray-400" style={{ left: '75%', transform: 'translateX(-50%)' }} />
+                                        {/* Tooltip valeur au-dessus du handle */}
+                                        {ticketThreshold > 0 && (
+                                            <div
+                                                className="absolute -top-6 flex items-center justify-center"
+                                                style={{ left: `calc(${handlePos * 100}% - 18px)`, pointerEvents: 'none' }}
+                                            >
+                                                <span className="text-[10px] font-bold text-white bg-indigo-600 rounded px-1.5 py-0.5 whitespace-nowrap shadow">
+                                                    {ticketThreshold.toLocaleString()}
+                                                </span>
+                                                <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1.5 h-1.5 bg-indigo-600 rotate-45" />
+                                            </div>
+                                        )}
+                                        {/* Handle */}
+                                        <div
+                                            className="absolute w-5 h-5 rounded-full border-2 border-white"
+                                            style={{ left: `calc(${handlePos * 100}% - 10px)`, background: 'linear-gradient(135deg, #6366f1, #4f46e5)', pointerEvents: 'none', boxShadow: '0 2px 8px rgba(79,70,229,0.4)' }}
+                                        />
+                                    </div>
+                                    {/* Labels — changent selon la zone active */}
+                                    <div className="flex text-xs mt-0.5">
+                                        <div className="flex justify-between font-medium text-indigo-500" style={{ width: '75%' }}>
+                                            {inZone1 ? (
+                                                <><span>0</span><span className="text-gray-400">50</span><span className="text-indigo-700">100</span></>
+                                            ) : (
+                                                <><span>100</span><span className="text-gray-400">5 050</span><span className="text-indigo-700">10 000</span></>
+                                            )}
+                                        </div>
+                                        <div className="flex justify-center pl-1 text-gray-300" style={{ width: '25%' }}>
+                                            <span>{inZone1 ? '10k →' : '← 100'}</span>
+                                        </div>
+                                    </div>
+                                    {/* Badges */}
+                                    <div className="flex mt-1.5">
+                                        <div className="flex justify-center" style={{ width: '75%' }}>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-indigo-100 text-indigo-600">
+                                                {inZone1 ? 'pas × 1  (0–100)' : 'pas × 50  (100–10 000)'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-center" style={{ width: '25%' }}>
+                                            <span className="text-[10px] px-2 py-0.5 rounded-full font-medium bg-gray-100 text-gray-400">
+                                                {inZone1 ? '× 50' : '× 1'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </>
+                            );
+                        })()}
+                        {ticketThreshold > 0 && (
+                            <p className="text-xs text-gray-400 mt-2 text-center">
+                                Max observé : <span className="font-semibold text-gray-600">{maxTickets.toLocaleString()} tickets</span>
+                            </p>
+                        )}
+                    </div>
+                );
+            })()}
+
             <div className="flex gap-2 items-center my-3">
                 <FaRegCalendar />
                 <p className=" text-xs font-bold">{currentDate}</p>
@@ -1866,36 +2034,42 @@ const Report = () => {
                         <h2 className="text-sm font-semibold text-center">Visualisation du flux des clients par Agence</h2>
                     </div>
                     <div className="flex-1 bg-white rounded-b-lg shadow-sm border border-gray-100 pt-12 px-2 overflow-x-auto">
-                        {filter == false ? <Line
+                        {(() => {
+                            const allowed = new Set(
+                                result?.totalInTimeByOffice
+                                    ?.filter(o => ticketThreshold === 0 || o.receives >= ticketThreshold)
+                                    .map(o => o.name) ?? []
+                            );
+                            const f = <T extends { name: string }>(arr: T[]) =>
+                                ticketThreshold === 0 ? arr : arr.filter(r => allowed.has(r.name));
+                            return filter == false ? <Line
                             data={{
-                                labels: result?.appointmentsByOffice.map(record => record.name),
+                                labels: f(result.appointmentsByOffice).map(record => record.name),
                                 datasets: [
-                                    // Vos datasets existants pour les quantités
                                     {
                                         label: 'Nombre de ticket prise',
-                                        data: result.appointmentsByOffice.map(record => record.amount),
+                                        data: f(result.appointmentsByOffice).map(record => record.amount),
                                         borderColor: 'rgba(0, 0, 0, 1)',
                                         backgroundColor: 'rgba(0, 0, 0, 0.5)',
                                         yAxisID: 'y',
                                     },
                                     {
                                         label: 'Nombre de ticket traité',
-                                        data: result.serveAppointmentsByOffice.map(record => record.amount),
+                                        data: f(result.serveAppointmentsByOffice).map(record => record.amount),
                                         borderColor: 'rgba(0, 255, 200, 1)',
                                         backgroundColor: 'rgba(0, 255, 200, 0.5)',
                                         yAxisID: 'y',
                                     },
                                     {
                                         label: 'Nombre de ticket en attente',
-                                        data: result.waitingAppointmentsByOffice.map(record => record.amount),
+                                        data: f(result.waitingAppointmentsByOffice).map(record => record.amount),
                                         borderColor: 'rgba(255, 0, 0, 1)',
                                         backgroundColor: 'rgba(255, 0, 0, 0.5)',
                                         yAxisID: 'y',
                                     },
-                                    // Nouveaux datasets pour les temps (sur axe Y secondaire)
                                     {
                                         label: 'Temps d\'attente moyen (min)',
-                                        data: result.totalByOffices.map(record => record.meanWaitingTime),
+                                        data: f(result.totalByOffices).map(record => record.meanWaitingTime),
                                         borderColor: 'rgba(255, 165, 0, 1)',
                                         backgroundColor: 'rgba(255, 165, 0, 0.3)',
                                         type: 'line',
@@ -1903,7 +2077,7 @@ const Report = () => {
                                     },
                                     {
                                         label: 'Temps de traitement moyen (min)',
-                                        data: result.totalByOffices.map(record => record.meanServingTime),
+                                        data: f(result.totalByOffices).map(record => record.meanServingTime),
                                         borderColor: 'rgba(128, 0, 128, 1)',
                                         backgroundColor: 'rgba(128, 0, 128, 0.3)',
                                         type: 'line',
@@ -1942,69 +2116,107 @@ const Report = () => {
                                     },
                                 },
                             }} />
-                            : <Line data={{
-                                labels: filterStats?.appointmentsByOffice.map(record => record.name),
-                                datasets: [
-                                    {
-                                        label: 'Nombre de ticket prise',
-                                        data: filterStats.appointmentsByOffice.map(record => record.amount), // Exemple de données pour le nombre total de rendez-vous
-                                        borderColor: 'rgba(0, 0, 0, 1)',
-                                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                                    },
-                                    {
-                                        label: 'Temps d\'attente moyen (min)',
-                                        data: filterStats.totalByOffices.map(record => record.meanWaitingTime),
-                                        borderColor: 'rgba(255, 165, 0, 1)',
-                                        backgroundColor: 'rgba(255, 165, 0, 0.3)',
-                                        type: 'line',
-                                        yAxisID: 'y1',
-                                    },
-                                    {
-                                        label: 'Temps de traitement moyen (min)',
-                                        data: filterStats.totalByOffices.map(record => record.meanServingTime),
-                                        borderColor: 'rgba(128, 0, 128, 1)',
-                                        backgroundColor: 'rgba(128, 0, 128, 0.3)',
-                                        type: 'line',
-                                        yAxisID: 'y1',
-                                    }
-                                ],
-                            }}
-                                options={{
-                                    responsive: true,
-                                    plugins: {
-                                        datalabels: {
-                                            display: false
+                            : (() => {
+                                const allowedF = new Set(
+                                    filterStats?.totalInTimeByOffice
+                                        ?.filter(o => ticketThreshold === 0 || o.receives >= ticketThreshold)
+                                        .map(o => o.name) ?? []
+                                );
+                                const ff = <T extends { name: string }>(arr: T[]) =>
+                                    ticketThreshold === 0 ? arr : arr.filter(r => allowedF.has(r.name));
+                                return <Line data={{
+                                    labels: ff(filterStats.appointmentsByOffice).map(record => record.name),
+                                    datasets: [
+                                        {
+                                            label: 'Nombre de ticket prise',
+                                            data: ff(filterStats.appointmentsByOffice).map(record => record.amount),
+                                            borderColor: 'rgba(0, 0, 0, 1)',
+                                            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                                        },
+                                        {
+                                            label: 'Temps d\'attente moyen (min)',
+                                            data: ff(filterStats.totalByOffices).map(record => record.meanWaitingTime),
+                                            borderColor: 'rgba(255, 165, 0, 1)',
+                                            backgroundColor: 'rgba(255, 165, 0, 0.3)',
+                                            type: 'line',
+                                            yAxisID: 'y1',
+                                        },
+                                        {
+                                            label: 'Temps de traitement moyen (min)',
+                                            data: ff(filterStats.totalByOffices).map(record => record.meanServingTime),
+                                            borderColor: 'rgba(128, 0, 128, 1)',
+                                            backgroundColor: 'rgba(128, 0, 128, 0.3)',
+                                            type: 'line',
+                                            yAxisID: 'y1',
                                         }
-                                    },
-                                    scales: {
-                                        y: {
-                                            type: 'linear',
-                                            display: true,
-                                            position: 'left',
-                                            title: {
-                                                display: true,
-                                                text: 'Nombre de tickets'
-                                            }
-                                        },
-                                        y1: {
-                                            type: 'linear',
-                                            display: true,
-                                            position: 'right',
-                                            title: {
-                                                display: true,
-                                                text: 'Temps (minutes)'
-                                            },
-                                            grid: {
-                                                drawOnChartArea: false,
-                                            },
-                                        },
-                                    },
+                                    ],
                                 }}
-                            />
-                        }
+                                    options={{
+                                        responsive: true,
+                                        plugins: { datalabels: { display: false } },
+                                        scales: {
+                                            y: { type: 'linear', display: true, position: 'left', title: { display: true, text: 'Nombre de tickets' } },
+                                            y1: { type: 'linear', display: true, position: 'right', title: { display: true, text: 'Temps (minutes)' }, grid: { drawOnChartArea: false } },
+                                        },
+                                    }}
+                                />;
+                            })();
+                        })()}
                     </div>
                 </div>
             </div>
+
+            {/* Délais moyens d'attente et de traitement par service */}
+            {(() => {
+                const metrics = filter === false ? result?.globalServiceMetrics : filterStats?.globalServiceMetrics;
+                if (!metrics || metrics.length === 0) return null;
+                return (
+                    <div className="flex flex-col my-3">
+                        <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                            <h2 className="text-sm font-semibold text-center">
+                                Délais moyens d&apos;attente et de traitement par service
+                            </h2>
+                        </div>
+                        <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 p-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+                                {metrics.map((metric, index) => (
+                                    <div
+                                        key={index}
+                                        className="flex flex-col rounded-lg border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                    >
+                                        {/* En-tête service */}
+                                        <div className="bg-gray-800 px-2 py-2 text-center">
+                                            <p className="text-white text-xs font-semibold leading-tight truncate" title={metric.name}>
+                                                {metric.name}
+                                            </p>
+                                        </div>
+                                        {/* Attente */}
+                                        <div className="flex flex-col items-center justify-center bg-gray-50 px-2 py-2 border-b border-gray-100">
+                                            <div className="flex items-center gap-1 mb-0.5">
+                                                <AiOutlineClockCircle className="text-gray-400 text-xs" />
+                                                <span className="text-gray-400 text-xs">Attente</span>
+                                            </div>
+                                            <span className="text-gray-700 font-bold text-xs tracking-tight">
+                                                {formatMinutesToTime(metric.meanWaiting)}
+                                            </span>
+                                        </div>
+                                        {/* Traitement */}
+                                        <div className="flex flex-col items-center justify-center bg-emerald-50 px-2 py-2">
+                                            <div className="flex items-center gap-1 mb-0.5">
+                                                <IoCheckmarkDoneCircleSharp className="text-emerald-500 text-xs" />
+                                                <span className="text-emerald-500 text-xs">Traitement</span>
+                                            </div>
+                                            <span className="text-emerald-600 font-bold text-xs tracking-tight">
+                                                {formatMinutesToTime(metric.meanServing)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })()}
 
             {/* Section Délais clients rapportés au nombre de caisses par agence */}
             <div className="flex flex-col my-3">
@@ -2016,22 +2228,28 @@ const Report = () => {
 
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
                     {filter === false ? (
-                        result?.meanWaitingTimeAndSubservices && result.meanWaitingTimeAndSubservices.length > 0 ? (
+                        result?.meanWaitingTimeAndSubservices && result.meanWaitingTimeAndSubservices.length > 0 ? (() => {
+                            const filteredMWTS = result.meanWaitingTimeAndSubservices.filter(r =>
+                                ticketThreshold === 0 || (result.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
+                            );
+                            return filteredMWTS.length === 0 ? (
+                                <p className="text-center text-gray-500 py-8">Aucune agence ne correspond au seuil</p>
+                            ) : (
                             <div className="relative">
                                 {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
                                 <div style={{ height: '120px', marginBottom: '1px', marginLeft: '6px' }}>
                                     <Line
                                         data={{
-                                            labels: result.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            labels: filteredMWTS.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Nombre de caisses',
-                                                    data: result.meanWaitingTimeAndSubservices.map(record => record.subServices),
+                                                    data: filteredMWTS.map(record => record.subServices),
                                                     borderColor: 'rgba(0, 0, 0, 1)',
                                                     backgroundColor: 'rgba(0, 0, 0, 0.1)',
                                                     borderWidth: 2,
                                                     pointRadius: 4,
-                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    pointBackgroundColor: filteredMWTS.map(record => pointColor(record.name)),
                                                     tension: 0.4,
                                                     datalabels: {
                                                         anchor: 'end',
@@ -2081,7 +2299,7 @@ const Report = () => {
                                                 y: {
                                                     display: false,
                                                     beginAtZero: true,
-                                                    suggestedMax: Math.max(...result.meanWaitingTimeAndSubservices.map(r => r.subServices)) + 2,
+                                                    suggestedMax: Math.max(...filteredMWTS.map(r => r.subServices)) + 2,
                                                     grid: {
                                                         display: false
                                                     }
@@ -2095,12 +2313,12 @@ const Report = () => {
                                 <div style={{ height: '280px', marginLeft: '-8px' }}>
                                     <Bar
                                         data={{
-                                            labels: result.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            labels: filteredMWTS.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Temps d\'attente',
-                                                    data: result.meanWaitingTimeAndSubservices.map(record => record.time),
-                                                    backgroundColor: '#F4A261',
+                                                    data: filteredMWTS.map(record => record.time),
+                                                    backgroundColor: filteredMWTS.map(record => barColor(record.name, '#F4A261')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
                                                     categoryPercentage: 0.6,
@@ -2184,26 +2402,33 @@ const Report = () => {
                                     />
                                 </div>
                             </div>
-                        ) : (
+                        );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     ) : (
-                        filterStats?.meanWaitingTimeAndSubservices && filterStats.meanWaitingTimeAndSubservices.length > 0 ? (
+                        filterStats?.meanWaitingTimeAndSubservices && filterStats.meanWaitingTimeAndSubservices.length > 0 ? (() => {
+                            const filteredFilterMWTS = filterStats.meanWaitingTimeAndSubservices.filter(r =>
+                                ticketThreshold === 0 || (filterStats.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
+                            );
+                            return filteredFilterMWTS.length === 0 ? (
+                                <p className="text-center text-gray-500 py-8">Aucune agence ne correspond au seuil</p>
+                            ) : (
                             <div className="relative">
                                 {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
                                 <div style={{ height: '120px', marginBottom: '1px', marginLeft: '6px' }}>
                                     <Line
                                         data={{
-                                            labels: filterStats.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            labels: filteredFilterMWTS.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Nombre de caisses',
-                                                    data: filterStats.meanWaitingTimeAndSubservices.map(record => record.subServices),
+                                                    data: filteredFilterMWTS.map(record => record.subServices),
                                                     borderColor: 'rgba(0, 0, 0, 1)',
                                                     backgroundColor: 'rgba(0, 0, 0, 0.1)',
                                                     borderWidth: 2,
                                                     pointRadius: 4,
-                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    pointBackgroundColor: filteredFilterMWTS.map(record => pointColor(record.name)),
                                                     tension: 0.4,
                                                     datalabels: {
                                                         anchor: 'end',
@@ -2253,7 +2478,7 @@ const Report = () => {
                                                 y: {
                                                     display: false,
                                                     beginAtZero: true,
-                                                    suggestedMax: Math.max(...filterStats.meanWaitingTimeAndSubservices.map(r => r.subServices)) + 2,
+                                                    suggestedMax: Math.max(...filteredFilterMWTS.map(r => r.subServices)) + 2,
                                                     grid: {
                                                         display: false
                                                     }
@@ -2267,12 +2492,12 @@ const Report = () => {
                                 <div style={{ height: '280px' }}>
                                     <Bar
                                         data={{
-                                            labels: filterStats.meanWaitingTimeAndSubservices.map(record => record.name),
+                                            labels: filteredFilterMWTS.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Temps d\'attente',
-                                                    data: filterStats.meanWaitingTimeAndSubservices.map(record => record.time),
-                                                    backgroundColor: '#F4A261',
+                                                    data: filteredFilterMWTS.map(record => record.time),
+                                                    backgroundColor: filteredFilterMWTS.map(record => barColor(record.name, '#F4A261')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
                                                     categoryPercentage: 0.6,
@@ -2355,7 +2580,8 @@ const Report = () => {
                                     />
                                 </div>
                             </div>
-                        ) : (
+                        );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     )}
@@ -2372,22 +2598,30 @@ const Report = () => {
 
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
                     {filter === false ? (
-                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (
+                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (() => {
+                            const sortedInTime = [...result.totalInTimeByOffice]
+                                .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
+                                .sort((a, b) => {
+                                const pA = a.receives > 0 ? (a.serves / a.receives) * 100 : 0;
+                                const pB = b.receives > 0 ? (b.serves / b.receives) * 100 : 0;
+                                return pA - pB;
+                            });
+                            return (
                             <div className="relative">
                                 {/* Graphique de la ligne noire (nombre de caisses) - EN HAUT */}
                                 <div style={{ height: '124px', position: 'relative' }}>
                                     <Line
                                         data={{
-                                            labels: result.totalInTimeByOffice.map(record => record.name),
+                                            labels: sortedInTime.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Nombre de tickets',
-                                                    data: result.totalInTimeByOffice.map(record => record.receives),
+                                                    data: sortedInTime.map(record => record.receives),
                                                     borderColor: 'rgba(0, 0, 0, 1)',
                                                     backgroundColor: 'rgba(0, 0, 0, 0.1)',
                                                     borderWidth: 2,
                                                     pointRadius: 4,
-                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    pointBackgroundColor: sortedInTime.map(record => pointColor(record.name)),
                                                     tension: 0.4,
                                                     datalabels: {
                                                         anchor: 'end',
@@ -2440,7 +2674,7 @@ const Report = () => {
                                                 y: {
                                                     display: false,
                                                     beginAtZero: true,
-                                                    suggestedMax: Math.max(...result.totalInTimeByOffice.map(r => r.receives)) + 1.2,
+                                                    suggestedMax: Math.max(...sortedInTime.map(r => r.receives)) + 1.2,
                                                     grid: {
                                                         display: false
                                                     }
@@ -2454,14 +2688,14 @@ const Report = () => {
                                 <div style={{ height: '280px', marginLeft: '-8px' }}>
                                     <Bar
                                         data={{
-                                            labels: result.totalInTimeByOffice.map(record => record.name),
+                                            labels: sortedInTime.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Pourcentage de tickets en normes',
-                                                    data: result.totalInTimeByOffice.map(record =>
+                                                    data: sortedInTime.map(record =>
                                                         record.receives > 0 ? (record.serves / record.receives) * 100 : 0
                                                     ),
-                                                    backgroundColor: '#E0E0E0',
+                                                    backgroundColor: sortedInTime.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
                                                     categoryPercentage: 0.6,
@@ -2546,26 +2780,35 @@ const Report = () => {
                                     />
                                 </div>
                             </div>
-                        ) : (
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     ) : (
-                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (
+                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (() => {
+                            const sortedFilterInTime = [...filterStats.totalInTimeByOffice]
+                                .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
+                                .sort((a, b) => {
+                                const pA = a.receives > 0 ? (a.serves / a.receives) * 100 : 0;
+                                const pB = b.receives > 0 ? (b.serves / b.receives) * 100 : 0;
+                                return pA - pB;
+                            });
+                            return (
                             <div className="relative">
                                 {/* Graphique de la ligne noire (nombre de tickets) - EN HAUT */}
                                 <div style={{ height: '120px', position: 'relative' }}>
                                     <Line
                                         data={{
-                                            labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                            labels: sortedFilterInTime.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Nombre de tickets',
-                                                    data: filterStats.totalInTimeByOffice.map(record => record.receives),
+                                                    data: sortedFilterInTime.map(record => record.receives),
                                                     borderColor: 'rgba(0, 0, 0, 1)',
                                                     backgroundColor: 'rgba(0, 0, 0, 0.1)',
                                                     borderWidth: 2,
                                                     pointRadius: 4,
-                                                    pointBackgroundColor: 'rgba(0, 0, 0, 1)',
+                                                    pointBackgroundColor: sortedFilterInTime.map(record => pointColor(record.name)),
                                                     tension: 0.4,
                                                     datalabels: {
                                                         anchor: 'end',
@@ -2618,7 +2861,7 @@ const Report = () => {
                                                 y: {
                                                     display: false,
                                                     beginAtZero: true,
-                                                    suggestedMax: Math.max(...filterStats.totalInTimeByOffice.map(r => r.receives)) + 1.2,
+                                                    suggestedMax: Math.max(...sortedFilterInTime.map(r => r.receives)) + 1.2,
                                                     grid: {
                                                         display: false
                                                     }
@@ -2632,14 +2875,14 @@ const Report = () => {
                                 <div style={{ height: '280px', marginLeft: '-8px' }}>
                                     <Bar
                                         data={{
-                                            labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                            labels: sortedFilterInTime.map(record => record.name),
                                             datasets: [
                                                 {
                                                     label: 'Pourcentage de tickets en normes',
-                                                    data: filterStats.totalInTimeByOffice.map(record =>
+                                                    data: sortedFilterInTime.map(record =>
                                                         record.receives > 0 ? (record.serves / record.receives) * 100 : 0
                                                     ),
-                                                    backgroundColor: '#E0E0E0',
+                                                    backgroundColor: sortedFilterInTime.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
                                                     categoryPercentage: 0.6,
@@ -2724,7 +2967,304 @@ const Report = () => {
                                     />
                                 </div>
                             </div>
-                        ) : (
+                            );
+                        })() : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    )}
+                </div>
+            </div>
+
+            {/* Nombre moyen de tickets par caisse et par agence */}
+            <div className="flex flex-col my-3">
+                <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
+                    <h2 className="text-sm font-semibold text-center">
+                        Nombre moyen de tickets par caisse et par agence
+                    </h2>
+                </div>
+                <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
+                    {filter === false ? (
+                        result?.meanWaitingTimeAndSubservices && result.meanWaitingTimeAndSubservices.length > 0 ? (() => {
+                            const sortedTickets = [...result.meanWaitingTimeAndSubservices]
+                                .filter(r => ticketThreshold === 0 || (result.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold)
+                                .sort((a, b) => {
+                                const rA = result.totalInTimeByOffice?.find(o => o.name === a.name)?.receives ?? 0;
+                                const rB = result.totalInTimeByOffice?.find(o => o.name === b.name)?.receives ?? 0;
+                                return rA - rB;
+                            });
+                            return (
+                            <div className="relative">
+                                {/* Graphique ligne (nombre de caisses) - EN HAUT */}
+                                <div style={{ height: '124px', position: 'relative' }}>
+                                    <Line
+                                        data={{
+                                            labels: sortedTickets.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de caisses',
+                                                    data: sortedTickets.map(record => record.subServices),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: sortedTickets.map(record => pointColor(record.name)),
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: { size: 11, weight: 'bold' },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: { padding: { top: 22, left: 14 } },
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function(context) {
+                                                            return 'Caisses: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: { display: true }
+                                            },
+                                            scales: {
+                                                x: { display: false, offset: true, grid: { display: false, offset: true } },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...sortedTickets.map(r => r.subServices)) + 2,
+                                                    grid: { display: false }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                {/* Graphique barres (nombre de tickets) - EN BAS */}
+                                <div style={{ height: '280px', marginLeft: '-8px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: sortedTickets.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de tickets',
+                                                    data: sortedTickets.map(record => {
+                                                        const office = result.totalInTimeByOffice?.find(o => o.name === record.name);
+                                                        return office ? office.receives : 0;
+                                                    }),
+                                                    backgroundColor: sortedTickets.map(record => barColor(record.name, '#E0E0E0')),
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    yAxisID: 'y',
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 4 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return value.toString();
+                                                        },
+                                                        font: { weight: 'bold', size: 9 },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: { padding: 0 },
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function(context) {
+                                                            return 'Tickets: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: { display: true }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: { display: false, offset: true },
+                                                    ticks: { font: { size: 10 } }
+                                                },
+                                                y: { display: false, beginAtZero: true, grid: { display: false } }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            );
+                        })() : (
+                            <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
+                        )
+                    ) : (
+                        filterStats?.meanWaitingTimeAndSubservices && filterStats.meanWaitingTimeAndSubservices.length > 0 ? (() => {
+                            const sortedFilterTickets = [...filterStats.meanWaitingTimeAndSubservices]
+                                .filter(r => ticketThreshold === 0 || (filterStats.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold)
+                                .sort((a, b) => {
+                                const rA = filterStats.totalInTimeByOffice?.find(o => o.name === a.name)?.receives ?? 0;
+                                const rB = filterStats.totalInTimeByOffice?.find(o => o.name === b.name)?.receives ?? 0;
+                                return rA - rB;
+                            });
+                            return (
+                            <div className="relative">
+                                {/* Graphique ligne (nombre de caisses) - EN HAUT */}
+                                <div style={{ height: '124px', position: 'relative' }}>
+                                    <Line
+                                        data={{
+                                            labels: sortedFilterTickets.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de caisses',
+                                                    data: sortedFilterTickets.map(record => record.subServices),
+                                                    borderColor: 'rgba(0, 0, 0, 1)',
+                                                    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+                                                    borderWidth: 2,
+                                                    pointRadius: 4,
+                                                    pointBackgroundColor: sortedFilterTickets.map(record => pointColor(record.name)),
+                                                    tension: 0.4,
+                                                    datalabels: {
+                                                        anchor: 'end',
+                                                        align: 'top',
+                                                        formatter: (value: number) => value.toString(),
+                                                        font: { size: 11, weight: 'bold' },
+                                                        color: '#000',
+                                                        offset: 5
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: { padding: { top: 22, left: 14 } },
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    enabled: true,
+                                                    callbacks: {
+                                                        label: function(context) {
+                                                            return 'Caisses: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: { display: true }
+                                            },
+                                            scales: {
+                                                x: { display: false, offset: true, grid: { display: false, offset: true } },
+                                                y: {
+                                                    display: false,
+                                                    beginAtZero: true,
+                                                    suggestedMax: Math.max(...sortedFilterTickets.map(r => r.subServices)) + 2,
+                                                    grid: { display: false }
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                {/* Graphique barres (nombre de tickets) - EN BAS */}
+                                <div style={{ height: '280px', marginLeft: '-8px' }}>
+                                    <Bar
+                                        data={{
+                                            labels: sortedFilterTickets.map(record => record.name),
+                                            datasets: [
+                                                {
+                                                    label: 'Nombre de tickets',
+                                                    data: sortedFilterTickets.map(record => {
+                                                        const office = filterStats.totalInTimeByOffice?.find(o => o.name === record.name);
+                                                        return office ? office.receives : 0;
+                                                    }),
+                                                    backgroundColor: sortedFilterTickets.map(record => barColor(record.name, '#E0E0E0')),
+                                                    borderRadius: 4,
+                                                    barPercentage: 0.7,
+                                                    categoryPercentage: 0.6,
+                                                    yAxisID: 'y',
+                                                    datalabels: {
+                                                        color: '#000',
+                                                        rotation: -90,
+                                                        anchor: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        align: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 'end' : 'center';
+                                                        },
+                                                        offset: (context: any) => {
+                                                            const value = context.dataset.data[context.dataIndex];
+                                                            const maxValue = Math.max(...context.dataset.data);
+                                                            return value < maxValue * 0.3 ? 4 : 0;
+                                                        },
+                                                        formatter: (value: number) => {
+                                                            if (value === 0) return null;
+                                                            return value.toString();
+                                                        },
+                                                        font: { weight: 'bold', size: 9 },
+                                                        clip: false
+                                                    }
+                                                }
+                                            ] as any
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            layout: { padding: 0 },
+                                            plugins: {
+                                                legend: { display: false },
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function(context) {
+                                                            return 'Tickets: ' + context.parsed.y;
+                                                        }
+                                                    }
+                                                },
+                                                datalabels: { display: true }
+                                            },
+                                            scales: {
+                                                x: {
+                                                    display: true,
+                                                    offset: true,
+                                                    grid: { display: false, offset: true },
+                                                    ticks: { font: { size: 10 } }
+                                                },
+                                                y: { display: false, beginAtZero: true, grid: { display: false } }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     )}
@@ -2738,16 +3278,20 @@ const Report = () => {
                 </div>
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 px-4 pb-8">
                     {filter === false ? (
-                        result?.totalByOffices && result.totalByOffices.length > 0 ? (
+                        result?.totalByOffices && result.totalByOffices.length > 0 ? (() => {
+                            const sortedByWaiting = [...result.totalByOffices]
+                                .filter(r => ticketThreshold === 0 || (result.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold)
+                                .sort((a, b) => a.meanWaitingTime - b.meanWaitingTime);
+                            return (
                             <div style={{ height: '400px' }}>
                                 <Bar
                                     data={{
-                                        labels: result.totalByOffices.map(record => record.name),
+                                        labels: sortedByWaiting.map(record => record.name),
                                         datasets: [
                                             {
                                                 label: 'Temps d\'attente',
-                                                data: result.totalByOffices.map(record => record.meanWaitingTime),
-                                                backgroundColor: '#E0E0E0',
+                                                data: sortedByWaiting.map(record => record.meanWaitingTime),
+                                                backgroundColor: sortedByWaiting.map(record => barColor(record.name, '#E0E0E0')),
                                                 borderColor: '#E0E0E0',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -2784,8 +3328,8 @@ const Report = () => {
                                             },
                                             {
                                                 label: 'Temps de traitement',
-                                                data: result.totalByOffices.map(record => record.meanServingTime),
-                                                backgroundColor: '#F4A261',
+                                                data: sortedByWaiting.map(record => record.meanServingTime),
+                                                backgroundColor: sortedByWaiting.map(record => barColor(record.name, '#F4A261')),
                                                 borderColor: '#F4A261',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -2796,17 +3340,17 @@ const Report = () => {
                                                     rotation: -90,
                                                     anchor: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 'end' : 'center';
                                                     },
                                                     align: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 'end' : 'center';
                                                     },
                                                     offset: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 4 : 0;
                                                     },
                                                     formatter: (value: number) => {
@@ -2868,20 +3412,25 @@ const Report = () => {
                                     }}
                                 />
                             </div>
-                        ) : (
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     ) : (
-                        filterStats?.totalByOffices && filterStats.totalByOffices.length > 0 ? (
+                        filterStats?.totalByOffices && filterStats.totalByOffices.length > 0 ? (() => {
+                            const sortedFilterByWaiting = [...filterStats.totalByOffices]
+                                .filter(r => ticketThreshold === 0 || (filterStats.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold)
+                                .sort((a, b) => a.meanWaitingTime - b.meanWaitingTime);
+                            return (
                             <div style={{ height: '400px' }}>
                                 <Bar
                                     data={{
-                                        labels: filterStats.totalByOffices.map(record => record.name),
+                                        labels: sortedFilterByWaiting.map(record => record.name),
                                         datasets: [
                                             {
                                                 label: 'Temps d\'attente',
-                                                data: filterStats.totalByOffices.map(record => record.meanWaitingTime),
-                                                backgroundColor: '#E0E0E0',
+                                                data: sortedFilterByWaiting.map(record => record.meanWaitingTime),
+                                                backgroundColor: sortedFilterByWaiting.map(record => barColor(record.name, '#E0E0E0')),
                                                 borderColor: '#E0E0E0',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -2918,8 +3467,8 @@ const Report = () => {
                                             },
                                             {
                                                 label: 'Temps de traitement',
-                                                data: filterStats.totalByOffices.map(record => record.meanServingTime),
-                                                backgroundColor: '#F4A261',
+                                                data: sortedFilterByWaiting.map(record => record.meanServingTime),
+                                                backgroundColor: sortedFilterByWaiting.map(record => barColor(record.name, '#F4A261')),
                                                 borderColor: '#F4A261',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -2930,17 +3479,17 @@ const Report = () => {
                                                     rotation: -90,
                                                     anchor: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 'end' : 'center';
                                                     },
                                                     align: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 'end' : 'center';
                                                     },
                                                     offset: (context: any) => {
                                                         const value = context.dataset.data[context.dataIndex];
-                                                        const maxValue = Math.max(...context.dataset.data);
+                                                        const maxValue = Math.max(...context.chart.data.datasets.flatMap((ds: any) => ds.data));
                                                         return value < maxValue * 0.3 ? 4 : 0;
                                                     },
                                                     formatter: (value: number) => {
@@ -2999,7 +3548,8 @@ const Report = () => {
                                     }}
                                 />
                             </div>
-                        ) : (
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     )}
@@ -3013,18 +3563,26 @@ const Report = () => {
                 </div>
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 px-4 pb-8">
                     {filter === false ? (
-                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (
+                        result?.totalInTimeByOffice && result.totalInTimeByOffice.length > 0 ? (() => {
+                            const sortedConformity = [...result.totalInTimeByOffice]
+                                .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
+                                .sort((a, b) => {
+                                const pA = a.receives > 0 ? (a.waitings / a.receives) * 100 : 0;
+                                const pB = b.receives > 0 ? (b.waitings / b.receives) * 100 : 0;
+                                return pA - pB;
+                            });
+                            return (
                             <div style={{ height: '400px' }}>
                                 <Bar
                                     data={{
-                                        labels: result.totalInTimeByOffice.map(record => record.name),
+                                        labels: sortedConformity.map(record => record.name),
                                         datasets: [
                                             {
                                                 label: 'Conformité attente',
-                                                data: result.totalInTimeByOffice.map(record =>
+                                                data: sortedConformity.map(record =>
                                                     record.receives > 0 ? (record.waitings / record.receives) * 100 : 0
                                                 ),
-                                                backgroundColor: '#E0E0E0',
+                                                backgroundColor: sortedConformity.map(record => barColor(record.name, '#E0E0E0')),
                                                 borderColor: '#E0E0E0',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -3061,10 +3619,10 @@ const Report = () => {
                                             },
                                             {
                                                 label: 'Conformité traitement',
-                                                data: result.totalInTimeByOffice.map(record =>
+                                                data: sortedConformity.map(record =>
                                                     record.receives > 0 ? (record.serves / record.receives) * 100 : 0
                                                 ),
-                                                backgroundColor: '#F4A261',
+                                                backgroundColor: sortedConformity.map(record => barColor(record.name, '#F4A261')),
                                                 borderColor: '#F4A261',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -3144,22 +3702,31 @@ const Report = () => {
                                     }}
                                 />
                             </div>
-                        ) : (
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     ) : (
-                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (
+                        filterStats?.totalInTimeByOffice && filterStats.totalInTimeByOffice.length > 0 ? (() => {
+                            const sortedFilterConformity = [...filterStats.totalInTimeByOffice]
+                                .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
+                                .sort((a, b) => {
+                                const pA = a.receives > 0 ? (a.waitings / a.receives) * 100 : 0;
+                                const pB = b.receives > 0 ? (b.waitings / b.receives) * 100 : 0;
+                                return pA - pB;
+                            });
+                            return (
                             <div style={{ height: '400px' }}>
                                 <Bar
                                     data={{
-                                        labels: filterStats.totalInTimeByOffice.map(record => record.name),
+                                        labels: sortedFilterConformity.map(record => record.name),
                                         datasets: [
                                             {
                                                 label: 'Conformité attente',
-                                                data: filterStats.totalInTimeByOffice.map(record =>
+                                                data: sortedFilterConformity.map(record =>
                                                     record.receives > 0 ? (record.waitings / record.receives) * 100 : 0
                                                 ),
-                                                backgroundColor: '#E0E0E0',
+                                                backgroundColor: sortedFilterConformity.map(record => barColor(record.name, '#E0E0E0')),
                                                 borderColor: '#E0E0E0',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -3196,10 +3763,10 @@ const Report = () => {
                                             },
                                             {
                                                 label: 'Conformité traitement',
-                                                data: filterStats.totalInTimeByOffice.map(record =>
+                                                data: sortedFilterConformity.map(record =>
                                                     record.receives > 0 ? (record.serves / record.receives) * 100 : 0
                                                 ),
-                                                backgroundColor: '#F4A261',
+                                                backgroundColor: sortedFilterConformity.map(record => barColor(record.name, '#F4A261')),
                                                 borderColor: '#F4A261',
                                                 borderWidth: 1,
                                                 borderRadius: 4,
@@ -3279,7 +3846,8 @@ const Report = () => {
                                     }}
                                 />
                             </div>
-                        ) : (
+                            );
+                        })() : (
                             <p className="text-center text-gray-500 py-8">Aucune donnée disponible</p>
                         )
                     )}

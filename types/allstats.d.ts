@@ -26,6 +26,11 @@ interface AllStats {
     receives: number;
     appointments: number;
     meanWaitingTimeAndSubservices: MWTSRecd[];
+    globalServiceMetrics: {
+        name: string;
+        meanWaiting: number;
+        meanServing: number;
+    }[];
 }
 
 interface Rec {
