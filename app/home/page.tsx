@@ -2229,9 +2229,15 @@ const Report = () => {
                 <div className="bg-white rounded-b-lg shadow-sm border border-gray-100 pt-8 pb-8" style={{ paddingLeft: '16px', paddingRight: '16px' }}>
                     {filter === false ? (
                         result?.meanWaitingTimeAndSubservices && result.meanWaitingTimeAndSubservices.length > 0 ? (() => {
-                            const filteredMWTS = result.meanWaitingTimeAndSubservices.filter(r =>
-                                ticketThreshold === 0 || (result.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
-                            );
+                            const totalDelay = (name: string, fallback: number) => {
+                                const office = result.totalByOffices?.find(o => o.name === name);
+                                return office ? (office.meanWaitingTime + office.meanServingTime) : fallback;
+                            };
+                            const filteredMWTS = result.meanWaitingTimeAndSubservices
+                                .filter(r =>
+                                    ticketThreshold === 0 || (result.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
+                                )
+                                .sort((a, b) => totalDelay(a.name, a.time) - totalDelay(b.name, b.time));
                             return filteredMWTS.length === 0 ? (
                                 <p className="text-center text-gray-500 py-8">Aucune agence ne correspond au seuil</p>
                             ) : (
@@ -2316,8 +2322,11 @@ const Report = () => {
                                             labels: filteredMWTS.map(record => record.name),
                                             datasets: [
                                                 {
-                                                    label: 'Temps d\'attente',
-                                                    data: filteredMWTS.map(record => record.time),
+                                                    label: 'Délai total (attente + traitement)',
+                                                    data: filteredMWTS.map(record => {
+                                                        const office = result.totalByOffices?.find(o => o.name === record.name);
+                                                        return office ? (office.meanWaitingTime + office.meanServingTime) : record.time;
+                                                    }),
                                                     backgroundColor: filteredMWTS.map(record => barColor(record.name, '#F4A261')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
@@ -2368,7 +2377,7 @@ const Report = () => {
                                                 tooltip: {
                                                     callbacks: {
                                                         label: function (context) {
-                                                            return 'Temps: ' + formatMinutesToTime(context.parsed.y);
+                                                            return 'Délai total: ' + formatMinutesToTime(context.parsed.y);
                                                         }
                                                     }
                                                 },
@@ -2408,9 +2417,15 @@ const Report = () => {
                         )
                     ) : (
                         filterStats?.meanWaitingTimeAndSubservices && filterStats.meanWaitingTimeAndSubservices.length > 0 ? (() => {
-                            const filteredFilterMWTS = filterStats.meanWaitingTimeAndSubservices.filter(r =>
-                                ticketThreshold === 0 || (filterStats.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
-                            );
+                            const totalDelay = (name: string, fallback: number) => {
+                                const office = filterStats.totalByOffices?.find(o => o.name === name);
+                                return office ? (office.meanWaitingTime + office.meanServingTime) : fallback;
+                            };
+                            const filteredFilterMWTS = filterStats.meanWaitingTimeAndSubservices
+                                .filter(r =>
+                                    ticketThreshold === 0 || (filterStats.totalInTimeByOffice?.find(o => o.name === r.name)?.receives ?? 0) >= ticketThreshold
+                                )
+                                .sort((a, b) => totalDelay(a.name, a.time) - totalDelay(b.name, b.time));
                             return filteredFilterMWTS.length === 0 ? (
                                 <p className="text-center text-gray-500 py-8">Aucune agence ne correspond au seuil</p>
                             ) : (
@@ -2495,8 +2510,11 @@ const Report = () => {
                                             labels: filteredFilterMWTS.map(record => record.name),
                                             datasets: [
                                                 {
-                                                    label: 'Temps d\'attente',
-                                                    data: filteredFilterMWTS.map(record => record.time),
+                                                    label: 'Délai total (attente + traitement)',
+                                                    data: filteredFilterMWTS.map(record => {
+                                                        const office = filterStats.totalByOffices?.find(o => o.name === record.name);
+                                                        return office ? (office.meanWaitingTime + office.meanServingTime) : record.time;
+                                                    }),
                                                     backgroundColor: filteredFilterMWTS.map(record => barColor(record.name, '#F4A261')),
                                                     borderRadius: 4,
                                                     barPercentage: 0.7,
@@ -2546,7 +2564,7 @@ const Report = () => {
                                                 tooltip: {
                                                     callbacks: {
                                                         label: function (context) {
-                                                            return 'Temps: ' + formatMinutesToTime(context.parsed.y);
+                                                            return 'Délai total: ' + formatMinutesToTime(context.parsed.y);
                                                         }
                                                     }
                                                 },
