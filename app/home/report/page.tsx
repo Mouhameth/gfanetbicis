@@ -2597,7 +2597,7 @@ const Home = () => {
                   {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                 </td>
                 <td className=' text-xs opacity-60'>
-                  {appointment.serve === true || appointment.received === true ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>}
+                  {appointment.serve === true || appointment.received === true || appointment.missing === true ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>}
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2634,7 +2634,7 @@ const Home = () => {
                   {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
                 </td>
                 <td className=' text-xs opacity-60'>
-                 {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                 {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                 </td>
                 <td className=' text-xs opacity-60'>
                   {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2710,7 +2710,7 @@ const Home = () => {
                       {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
                     </td>
                     <td className=' text-xs opacity-60'>
-                      {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                      {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2747,7 +2747,7 @@ const Home = () => {
                       {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
                     </td>
                     <td className=' text-xs opacity-60'>
-                     {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>: appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                     {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>: appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                     </td>
                     <td className=' text-xs opacity-60'>
                       {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2825,7 +2825,7 @@ const Home = () => {
                             {appointment.callTime !== null ? appointment.callTime : <span className=" text-red-500">En attente...</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {appointment.serve === true || appointment.received === true ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>}
+                            {appointment.serve === true || appointment.received === true || appointment.missing === true ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>}
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.received ? <span className=" text-green-500">En traitement...</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2866,7 +2866,7 @@ const Home = () => {
                               {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
                             </td>
                             <td className=' text-xs opacity-60'>
-                              {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                              {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                             </td>
                             <td className=' text-xs opacity-60'>
                               {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2945,7 +2945,7 @@ const Home = () => {
                             {appointment.callTime !== null ? appointment.callTime : filterOffice ? <span className=" text-red-500">En attente...</span> : <span className=" text-red-500">Non appelé</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                            {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
@@ -2985,7 +2985,7 @@ const Home = () => {
                             {appointment.callTime !== null ? appointment.callTime : <span>00.00.00</span>}
                           </td>
                           <td className=' text-xs opacity-60'>
-                            {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
+                            {(filterOffice && filterTwoDate == false)? (appointment.serve === true || appointment.received === true || appointment.missing === true) ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500"><WaitingTime startTime={appointment.time} /></span>:  appointment.callTime !== null ? format(appointment.waitingTime * 60 * 1000, 'HH:mm:ss') : <span className=" text-red-500">Non appelé</span> }
                           </td>
                           <td className=' text-xs opacity-60'>
                             {appointment.received ? filterOffice ? <span className=" text-green-500">En traitement...</span> : <span className=" text-red-500">Non clôturé</span> : format(appointment.processingTime * 60 * 1000, 'HH:mm:ss')}
