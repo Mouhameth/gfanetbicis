@@ -3008,7 +3008,9 @@ const Report = () => {
                                 .sort((a, b) => {
                                 const rA = result.totalInTimeByOffice?.find(o => o.name === a.name)?.receives ?? 0;
                                 const rB = result.totalInTimeByOffice?.find(o => o.name === b.name)?.receives ?? 0;
-                                return rA - rB;
+                                const avgA = a.subServices > 0 ? rA / a.subServices : 0;
+                                const avgB = b.subServices > 0 ? rB / b.subServices : 0;
+                                return avgA - avgB;
                             });
                             return (
                             <div className="relative">
@@ -3073,10 +3075,13 @@ const Report = () => {
                                             labels: sortedTickets.map(record => record.name),
                                             datasets: [
                                                 {
-                                                    label: 'Nombre de tickets',
+                                                    label: 'Moyenne tickets / caisse',
                                                     data: sortedTickets.map(record => {
                                                         const office = result.totalInTimeByOffice?.find(o => o.name === record.name);
-                                                        return office ? office.receives : 0;
+                                                        const receives = office ? office.receives : 0;
+                                                        return record.subServices > 0
+                                                            ? Math.round((receives / record.subServices) * 10) / 10
+                                                            : 0;
                                                     }),
                                                     backgroundColor: sortedTickets.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,
@@ -3120,7 +3125,7 @@ const Report = () => {
                                                 tooltip: {
                                                     callbacks: {
                                                         label: function(context) {
-                                                            return 'Tickets: ' + context.parsed.y;
+                                                            return 'Moyenne: ' + context.parsed.y + ' tickets/caisse';
                                                         }
                                                     }
                                                 },
@@ -3150,7 +3155,9 @@ const Report = () => {
                                 .sort((a, b) => {
                                 const rA = filterStats.totalInTimeByOffice?.find(o => o.name === a.name)?.receives ?? 0;
                                 const rB = filterStats.totalInTimeByOffice?.find(o => o.name === b.name)?.receives ?? 0;
-                                return rA - rB;
+                                const avgA = a.subServices > 0 ? rA / a.subServices : 0;
+                                const avgB = b.subServices > 0 ? rB / b.subServices : 0;
+                                return avgA - avgB;
                             });
                             return (
                             <div className="relative">
@@ -3215,10 +3222,13 @@ const Report = () => {
                                             labels: sortedFilterTickets.map(record => record.name),
                                             datasets: [
                                                 {
-                                                    label: 'Nombre de tickets',
+                                                    label: 'Moyenne tickets / caisse',
                                                     data: sortedFilterTickets.map(record => {
                                                         const office = filterStats.totalInTimeByOffice?.find(o => o.name === record.name);
-                                                        return office ? office.receives : 0;
+                                                        const receives = office ? office.receives : 0;
+                                                        return record.subServices > 0
+                                                            ? Math.round((receives / record.subServices) * 10) / 10
+                                                            : 0;
                                                     }),
                                                     backgroundColor: sortedFilterTickets.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,
@@ -3262,7 +3272,7 @@ const Report = () => {
                                                 tooltip: {
                                                     callbacks: {
                                                         label: function(context) {
-                                                            return 'Tickets: ' + context.parsed.y;
+                                                            return 'Moyenne: ' + context.parsed.y + ' tickets/caisse';
                                                         }
                                                     }
                                                 },
