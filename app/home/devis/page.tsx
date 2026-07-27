@@ -4,6 +4,7 @@ import Loader from "@/components/common/Loader";
 import MyModal from "@/components/Modal";
 import useAxiosAuth from "@/hooks/useAxiosAuth";
 import { Currency } from "@/types/currency";
+import { Office } from "@/types/office";
 import { Sentence } from "@/types/sentence";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "@mui/material";
