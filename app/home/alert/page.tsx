@@ -4,6 +4,7 @@ import Loader from "@/components/common/Loader";
 import MyModal from "@/components/Modal";
 import useAxiosAuth from "@/hooks/useAxiosAuth";
 import { Alert } from "@/types/alert";
+import { Office } from "@/types/office";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Modal } from "@mui/material";
 import { useSession } from "next-auth/react";

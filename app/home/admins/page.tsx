@@ -18,6 +18,7 @@ import { TbTallymark4 } from 'react-icons/tb';
 import useAxiosAuth from '@/hooks/useAxiosAuth';
 import useSWR from 'swr';
 import { PiBuildingOfficeBold } from 'react-icons/pi';
+import { Office } from '@/types/office';
 
 const schema = zod.object({
   username: zod.string(

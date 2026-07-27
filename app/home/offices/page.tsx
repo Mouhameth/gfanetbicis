@@ -14,6 +14,7 @@ import { fr } from "date-fns/locale/fr";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { io, Socket } from 'socket.io-client';
+import { Office } from "@/types/office";
 
 
 const Offices = () => {

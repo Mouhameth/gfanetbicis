@@ -5,6 +5,8 @@ export interface Sentence {
     devis?: string;
     buy?: number;
     sell?: number;
+    visualDisplay?: boolean;
     createdAt: Date;
     updatedAt: Date;
+    Offices?: { id: number; name: string }[];
 }

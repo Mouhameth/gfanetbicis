@@ -36,6 +36,7 @@ import Modal from '@mui/material/Modal'
 import useChangeHeaderTitle from "@/app/hooks/useChangedHeader";
 import { AiOutlineClockCircle, AiOutlineWarning } from "react-icons/ai";
 import { WaitingTime } from "@/components/WaitingTime";
+import { Office } from "@/types/office";
 
 ChartJS.register(
   CategoryScale,

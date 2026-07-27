@@ -4,5 +4,7 @@ interface Media {
     type: string;
     selected: boolean;
     playTime: number;
+    visuDisplay?: boolean;
     createdAt: Date;
+    Offices?: { id: number; name: string }[];
 }
