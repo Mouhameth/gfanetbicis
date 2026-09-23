@@ -2610,7 +2610,7 @@ const Report = () => {
             <div className="flex flex-col my-3">
                 <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white py-3 px-4 rounded-t-lg">
                     <h2 className="text-sm font-semibold text-center">
-                        Confirmité aux objectifs sur les volumes de tickets
+                        Conformité aux objectifs sur les volumes de tickets
                     </h2>
                 </div>
 
