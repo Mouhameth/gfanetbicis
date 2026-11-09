@@ -30,6 +30,7 @@ interface AllStats {
         name: string;
         meanWaiting: number;
         meanServing: number;
+        receives: number;
     }[];
 }
 

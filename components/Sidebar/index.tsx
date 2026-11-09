@@ -8,6 +8,7 @@ import { BsCurrencyExchange, BsPersonCircle } from "react-icons/bs";
 import { MdPermMedia } from "react-icons/md";
 import { PiBuildingsFill } from "react-icons/pi";
 import { TbReportAnalytics } from "react-icons/tb";
+import { BsTicketPerforated } from "react-icons/bs";
 
 const rootItems = [
     {
@@ -19,6 +20,11 @@ const rootItems = [
         label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
+    },
+    {
+        label: "Recherche tickets",
+        href: "/home/tickets",
+        icon: BsTicketPerforated
     },
     {
         label: "Agences",
@@ -62,6 +68,11 @@ const adminOfficeItems = [
         icon: RxDashboard
     },
     {
+        label: "Recherche tickets",
+        href: "/home/tickets",
+        icon: BsTicketPerforated
+    },
+    {
         label: "Paramètre",
         href: "/home/settings",
         icon: LuSettings,
@@ -79,6 +90,11 @@ const adminItems = [
         label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
+    },
+    {
+        label: "Recherche tickets",
+        href: "/home/tickets",
+        icon: BsTicketPerforated
     },
     {
         label: "Agences",
@@ -119,6 +135,11 @@ const marketingItems = [
         label: "Dashboard Par Agence",
         href: "/home/report",
         icon: TbReportAnalytics
+    },
+    {
+        label: "Recherche tickets",
+        href: "/home/tickets",
+        icon: BsTicketPerforated
     },
     {
         label: "Agences",

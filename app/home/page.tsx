@@ -36,6 +36,7 @@ import { IoIosTrendingUp } from "react-icons/io";
 import useChangeHeaderTitle from "../hooks/useChangedHeader";
 import { FaSquarePollVertical } from "react-icons/fa6";
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import AgencyRanking, { ComparePeriod, CountTrend, DelayTrend, useDelayComparison } from "@/components/DelayComparison";
 
 
 ChartJS.register(
@@ -151,6 +152,14 @@ const Report = () => {
 
     const [filterStats, setFilterStats] = useState(emptyStats);
     const [filter, setFilter] = useState(false);
+    // Période du dernier filtre appliqué, pour la comparaison des délais.
+    // Sans filtre, on compare la journée d'aujourd'hui.
+    const [filterPeriod, setFilterPeriod] = useState<ComparePeriod | null>(null);
+    const comparePeriod: ComparePeriod = filter && filterPeriod ? filterPeriod : { date: now.toLocaleDateString('fr-FR') };
+    const { data: comparison, isLoading: comparisonLoading } = useDelayComparison(comparePeriod);
+    const shownStats = filter === false ? result : filterStats;
+    const waitingTarget = comparison?.targets.meanWaitingTime ?? null;
+    const servingTarget = comparison?.targets.meanServingTime ?? null;
     const [ticketThreshold, setTicketThreshold] = useState(0);
     const [showTicketFilter, setShowTicketFilter] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -187,6 +196,7 @@ const Report = () => {
 
         try {
             setFilter(true);
+            setFilterPeriod({ date });
             setLoading(true);
             setCurrentDate(`L'année ${date}`);
             if (date.split('/').length === 2) {
@@ -217,6 +227,7 @@ const Report = () => {
         setDescription(`Ceci represente l'ensemble des données de toutes les agences  de ${start} à ${end}`)
         try {
             setFilter(true);
+            setFilterPeriod({ start, end });
             setLoading(true);
             setCurrentDate(`Entre le ${format(`${start.split('/')[1]}/${start.split('/')[0]}/${start.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })} et le ${format(`${end.split('/')[1]}/${end.split('/')[0]}/${end.split('/')[2]}`, 'EEEE dd MMMM yyyy', { locale: fr })}`);
             const res = await axiosAuth.post<AllStats>(`${url}/range`, JSON.stringify({ start: start, end: end }));
@@ -1805,121 +1816,159 @@ const Report = () => {
                 <p className=" text-xs font-bold">{currentDate}</p>
             </div>
             {/* Container principal avec hauteur 2/3 de l'écran */}
-            <div className=" flex justify-center items-center">
-                <FaSquarePollVertical size={40} className=" mr-1" />
-                <div className="flex bg-white rounded-sm justify-between items-center ">
+            <div className=" flex justify-center items-stretch w-full">
+                <FaSquarePollVertical size={30} className=" mr-1 shrink-0 self-center hidden 2xl:block" />
+                {/* Une seule ligne : chaque case prend la largeur de son contenu, libellés sans retour à la ligne */}
+                <div className="flex flex-nowrap flex-1 bg-white rounded-sm items-stretch min-w-0 max-w-full">
 
-                    <div className="flex w-fit p-2 h-20 items-center justify-center gap-2 border-r-[1px]">
-                        <div className=" w-8 h-8 bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                    <div className="flex flex-auto px-1 xl:px-2 py-1 min-h-[3.5rem] items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-green-500 bg-opacity-20 rounded-full flex justify-center items-center">
                             <IoCheckmarkDoneCircleSharp className=" text-green-600" />
                         </div>
                         <div>
-                            <h2 className=" text-xs font-bold">
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
                                 {filter === false ? result?.receives : filterStats.receives}
                             </h2>
-                            <div className=" flex items-center gap-2">
-                                <p className=" text-xs opacity-60">
+                            <div className=" flex items-center gap-1">
+                                <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                     Traités
                                 </p>
-                                <p className=" text-xs text-green-500 font-semibold">
+                                <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-green-500 font-semibold">
                                     {filter === false ? `${result?.receives ? `${((result?.receives / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.receives ? `${((filterStats?.receives / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div className="flex w-fit px-2 py-2 items-center justify-center gap-4 border-r-[1px]">
-                        <div className=" w-8 h-8 bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                    <div className="flex flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-red-500 bg-opacity-20 rounded-full flex justify-center items-center">
                             <RiLoader2Fill className=" text-red-600" />
                         </div>
                         <div>
-                            <h2 className=" text-xs font-bold">
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
                                 {filter === false ? result?.waitings : filterStats.waitings}
                             </h2>
-                            <div className=" flex items-center gap-2">
-                                <p className=" text-xs opacity-60">
+                            <div className=" flex items-center gap-1">
+                                <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                     {filter === false ? `En attente` : `Non appelés`}
                                 </p>
-                                <p className=" text-xs text-red-500 font-semibold">
+                                <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-red-500 font-semibold">
                                     {filter === false ? `${result?.waitings ? `${((result?.waitings / result?.appointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.waitings ? `${((filterStats?.waitings / filterStats?.appointments) * 100).toFixed()}%` : '0%'}`}
                                 </p>
                             </div>
                         </div>
                     </div>
-                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-4 border-r-[1px]">
-                        <div className=" w-8 h-8 bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
+                    <div className="flex flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-yellow-500 bg-opacity-20 rounded-full flex justify-center items-center">
                             <BsStickyFill className=" text-yellow-600" />
                         </div>
                         <div>
-                            <h2 className=" text-xs font-bold">
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
                                 {filter === false ? result?.appointments : filterStats.appointments}
                             </h2>
-                            <p className=" text-xs opacity-60">
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                 Total
                             </p>
+                            <CountTrend
+                                value={shownStats?.appointments || 0}
+                                previous={comparison?.previous.appointments}
+                                previousLabel={comparison?.previousLabel}
+                            />
+                        </div>
+                    </div>
+                    {/* Délai moyen client = délai moyen d'attente + délai moyen de traitement */}
+                    <div className="flex flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-blue-400 bg-opacity-10 rounded-full flex justify-center items-center">
+                            <MdOutlineTimelapse className=" text-blue-500" />
+                        </div>
+                        <div>
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
+                                {filter === false ? format(((result?.meanWaitingTime || 0) + (result?.meanServingTime || 0)) * 60 * 1000, 'HH:mm:ss') : format(((filterStats?.meanWaitingTime || 0) + (filterStats?.meanServingTime || 0)) * 60 * 1000, 'HH:mm:ss')}
+                            </h2>
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
+                                Délai moyen client
+                            </p>
+                            <DelayTrend
+                                value={(shownStats?.meanWaitingTime || 0) + (shownStats?.meanServingTime || 0)}
+                                previous={comparison ? comparison.previous.meanWaitingTime + comparison.previous.meanServingTime : undefined}
+                                previousLabel={comparison?.previousLabel}
+                                target={waitingTarget !== null && servingTarget !== null ? waitingTarget + servingTarget : null}
+                            />
                         </div>
                     </div>
 
-                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-2 border-r-[1px]">
-                        <div className=" w-12 h-12 bg-red-400 bg-opacity-10 rounded-full flex justify-center items-center">
+                    <div className="flex flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-red-400 bg-opacity-10 rounded-full flex justify-center items-center">
                             <MdOutlineTimelapse className=" text-red-500" />
                         </div>
                         <div>
-                            <h2 className=" text-xs font-bold">
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
                                 {filter === false ? format(result?.meanWaitingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanWaitingTime * 60 * 1000, 'HH:mm:ss')}
                             </h2>
-                            <p className=" text-xs opacity-60">
-                                Attente moyenne
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
+                                Délai moyen d&apos;attente
                             </p>
+                            <DelayTrend
+                                value={shownStats?.meanWaitingTime || 0}
+                                previous={comparison?.previous.meanWaitingTime}
+                                previousLabel={comparison?.previousLabel}
+                                target={waitingTarget}
+                            />
                         </div>
                     </div>
-                    <div className="flex w-fit h-20 p-2 items-center justify-center gap-2 border-r-[1px]">
-                        <div className=" w-12 h-12 bg-green-400 bg-opacity-10 rounded-full flex justify-center items-center">
+                    <div className="flex flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 items-center justify-center gap-1 xl:gap-2 border-r-[1px]">
+                        <div className=" w-4 h-4 xl:w-5 xl:h-5 shrink-0 text-[8px] xl:text-[10px] bg-green-400 bg-opacity-10 rounded-full flex justify-center items-center">
                             <MdOutlineTimelapse className=" text-green-500" />
                         </div>
                         <div>
-                            <h2 className=" text-xs font-bold">
+                            <h2 className=" text-[9px] xl:text-[11px] font-bold">
                                 {filter === false ? format(result?.meanServingTime * 60 * 1000, 'HH:mm:ss') : format(filterStats?.meanServingTime * 60 * 1000, 'HH:mm:ss')}
                             </h2>
-                            <p className=" text-xs opacity-60">
-                                Traitement moyen
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
+                                Délai moyen de traitement
                             </p>
+                            <DelayTrend
+                                value={shownStats?.meanServingTime || 0}
+                                previous={comparison?.previous.meanServingTime}
+                                previousLabel={comparison?.previousLabel}
+                                target={servingTarget}
+                            />
                         </div>
                     </div>
-                    <div className=" w-fit h-20 p-2 gap-2 border-r-[1px]">
+                    <div className=" flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 gap-1 xl:gap-2 border-r-[1px]">
                         <div>
-                            <p className=" text-xs opacity-60 text-center pb-1 ">
-                                Attente optimale
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap text-center ">
+                                Délai d&apos;attente optimal
                             </p>
-                            <div className=" flex justify-between px-2 gap-2 pb-1">
+                            <div className=" flex justify-around px-1 gap-1 xl:gap-2">
                                 <div className=" text-center">
-                                    <p className=" text-xs opacity-60">
+                                    <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                         Ticket
                                     </p>
-                                    <h2 className=" text-sm font-bold text-green-500">
+                                    <h2 className=" text-[9px] xl:text-[11px] font-bold text-green-500">
                                         {filter === false ? result?.totalInWaiting : filterStats.totalInWaiting}
                                     </h2>
-                                    <div className=" flex items-center gap-2">
-                                        <p className=" text-xs opacity-60">
+                                    <div className=" flex items-center gap-1">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                             Oui
                                         </p>
-                                        <p className=" text-xs text-green-500 font-semibold">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-green-500 font-semibold">
                                             {filter === false ? `${result?.totalInWaiting ? `${((result?.totalInWaiting / result?.totalAppointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totalInWaiting ? `${((filterStats?.totalInWaiting / filterStats?.totalAppointments) * 100).toFixed()}%` : '0%'}`}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="border-r-[1px]"></div>
                                 <div className=" text-center">
-                                    <p className=" text-xs opacity-60">
+                                    <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                         Ticket
                                     </p>
-                                    <h2 className=" text-sm font-bold text-red-500">
+                                    <h2 className=" text-[9px] xl:text-[11px] font-bold text-red-500">
                                         {filter === false ? result?.totalNotInWaiting : filterStats.totalNotInWaiting}
                                     </h2>
-                                    <div className=" flex items-center gap-2">
-                                        <p className=" text-xs opacity-60">
+                                    <div className=" flex items-center gap-1">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                             Non
                                         </p>
-                                        <p className=" text-xs text-red-500 font-semibold">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-red-500 font-semibold">
                                             {filter === false ? `${result?.totalNotInWaiting ? `${((result?.totalNotInWaiting / result?.totalAppointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totalNotInWaiting ? `${((filterStats?.totalNotInWaiting / filterStats?.totalAppointments) * 100).toFixed()}%` : '0%'}`}
                                         </p>
                                     </div>
@@ -1927,41 +1976,41 @@ const Report = () => {
                             </div>
                         </div>
                     </div>
-                    <div className=" w-fit h-20 p-2 gap-2 border-r-[1px]">
+                    <div className=" flex-auto min-h-[3.5rem] px-1 xl:px-2 py-1 gap-1 xl:gap-2 border-r-[1px]">
                         <div>
-                            <p className=" text-xs opacity-60 text-center pb-1">
-                                Traitement optimal
+                            <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap text-center">
+                                Délai de traitement optimal
                             </p>
-                            <div className=" flex justify-between gap-2 px-2">
+                            <div className=" flex justify-around gap-1 xl:gap-2 px-1">
                                 <div className=" text-center">
-                                    <p className=" text-xs opacity-60">
+                                    <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                         Ticket
                                     </p>
-                                    <h2 className=" text-sm font-bold text-green-500">
+                                    <h2 className=" text-[9px] xl:text-[11px] font-bold text-green-500">
                                         {filter === false ? result?.totatlInServing : filterStats.totatlInServing}
                                     </h2>
-                                    <div className=" flex items-center gap-2">
-                                        <p className=" text-xs opacity-60">
+                                    <div className=" flex items-center gap-1">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                             Oui
                                         </p>
-                                        <p className=" text-xs text-green-500 font-semibold">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-green-500 font-semibold">
                                             {filter === false ? `${result?.totatlInServing ? `${((result?.totatlInServing / result?.totalAppointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totatlInServing ? `${((filterStats?.totatlInServing / filterStats?.totalAppointments) * 100).toFixed()}%` : '0%'}`}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="border-r-[1px]"></div>
                                 <div className=" text-center">
-                                    <p className=" text-xs opacity-60">
+                                    <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                         Ticket
                                     </p>
-                                    <h2 className=" text-sm font-bold text-red-500">
+                                    <h2 className=" text-[9px] xl:text-[11px] font-bold text-red-500">
                                         {filter === false ? result?.totatlNotInServing : filterStats.totatlNotInServing}
                                     </h2>
-                                    <div className=" flex items-center gap-2">
-                                        <p className=" text-xs opacity-60">
+                                    <div className=" flex items-center gap-1">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] leading-tight opacity-60 whitespace-nowrap">
                                             Non
                                         </p>
-                                        <p className=" text-xs text-red-500 font-semibold">
+                                        <p className=" text-[7px] lg:text-[8px] xl:text-[9px] text-red-500 font-semibold">
                                             {filter === false ? `${result?.totatlNotInServing ? `${((result?.totatlNotInServing / result?.totalAppointments) * 100).toFixed()}%` : '0%'}` : `${filterStats?.totatlNotInServing ? `${((filterStats?.totatlNotInServing / filterStats?.totalAppointments) * 100).toFixed()}%` : '0%'}`}
                                         </p>
                                     </div>
@@ -1970,7 +2019,7 @@ const Report = () => {
                         </div>
                     </div>
                 </div>
-                <div className=" w-4 bg-black h-20">
+                <div className=" w-4 bg-black shrink-0 hidden 2xl:block">
                 </div>
             </div>
             <div className="flex gap-3 h-fit my-3">
@@ -2182,13 +2231,23 @@ const Report = () => {
                                 {metrics.map((metric, index) => (
                                     <div
                                         key={index}
-                                        className="flex flex-col rounded-lg border border-gray-100 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
+                                        className="flex flex-col rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition-shadow"
                                     >
                                         {/* En-tête service */}
                                         <div className="bg-gray-800 px-2 py-2 text-center">
                                             <p className="text-white text-xs font-semibold leading-tight truncate" title={metric.name}>
                                                 {metric.name}
                                             </p>
+                                        </div>
+                                        {/* Tickets pris */}
+                                        <div className="flex flex-col items-center justify-center bg-amber-50 px-2 py-2">
+                                            <div className="flex items-center gap-1 mb-0.5">
+                                                <BsStickyFill className="text-amber-500 text-xs" />
+                                                <span className="text-amber-500 text-xs">Tickets</span>
+                                            </div>
+                                            <span className="text-amber-600 font-bold text-xs tracking-tight">
+                                                {(metric.receives ?? 0).toLocaleString('fr-FR')}
+                                            </span>
                                         </div>
                                         {/* Attente */}
                                         <div className="flex flex-col items-center justify-center bg-gray-50 px-2 py-2 border-b border-gray-100">
@@ -2201,7 +2260,7 @@ const Report = () => {
                                             </span>
                                         </div>
                                         {/* Traitement */}
-                                        <div className="flex flex-col items-center justify-center bg-emerald-50 px-2 py-2">
+                                        <div className="flex flex-col items-center justify-center bg-emerald-50 px-2 py-2 border-b border-gray-100">
                                             <div className="flex items-center gap-1 mb-0.5">
                                                 <IoCheckmarkDoneCircleSharp className="text-emerald-500 text-xs" />
                                                 <span className="text-emerald-500 text-xs">Traitement</span>
@@ -2217,6 +2276,9 @@ const Report = () => {
                     </div>
                 );
             })()}
+
+            {/* Top 5 / Flop 5 des agences (la comparaison est dans la barre de chiffres) */}
+            <AgencyRanking data={comparison} isLoading={comparisonLoading} ticketThreshold={ticketThreshold} />
 
             {/* Section Délais clients rapportés au nombre de caisses par agence */}
             <div className="flex flex-col my-3">
@@ -2620,8 +2682,8 @@ const Report = () => {
                             const sortedInTime = [...result.totalInTimeByOffice]
                                 .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
                                 .sort((a, b) => {
-                                const pA = a.receives > 0 ? (a.serves / a.receives) * 100 : 0;
-                                const pB = b.receives > 0 ? (b.serves / b.receives) * 100 : 0;
+                                const pA = a.receives > 0 ? ((a.waitings + a.serves) / (2 * a.receives)) * 100 : 0;
+                                const pB = b.receives > 0 ? ((b.waitings + b.serves) / (2 * b.receives)) * 100 : 0;
                                 return pA - pB;
                             });
                             return (
@@ -2711,7 +2773,7 @@ const Report = () => {
                                                 {
                                                     label: 'Pourcentage de tickets en normes',
                                                     data: sortedInTime.map(record =>
-                                                        record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                        record.receives > 0 ? ((record.waitings + record.serves) / (2 * record.receives)) * 100 : 0
                                                     ),
                                                     backgroundColor: sortedInTime.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,
@@ -2807,8 +2869,8 @@ const Report = () => {
                             const sortedFilterInTime = [...filterStats.totalInTimeByOffice]
                                 .filter(r => ticketThreshold === 0 || r.receives >= ticketThreshold)
                                 .sort((a, b) => {
-                                const pA = a.receives > 0 ? (a.serves / a.receives) * 100 : 0;
-                                const pB = b.receives > 0 ? (b.serves / b.receives) * 100 : 0;
+                                const pA = a.receives > 0 ? ((a.waitings + a.serves) / (2 * a.receives)) * 100 : 0;
+                                const pB = b.receives > 0 ? ((b.waitings + b.serves) / (2 * b.receives)) * 100 : 0;
                                 return pA - pB;
                             });
                             return (
@@ -2898,7 +2960,7 @@ const Report = () => {
                                                 {
                                                     label: 'Pourcentage de tickets en normes',
                                                     data: sortedFilterInTime.map(record =>
-                                                        record.receives > 0 ? (record.serves / record.receives) * 100 : 0
+                                                        record.receives > 0 ? ((record.waitings + record.serves) / (2 * record.receives)) * 100 : 0
                                                     ),
                                                     backgroundColor: sortedFilterInTime.map(record => barColor(record.name, '#E0E0E0')),
                                                     borderRadius: 4,

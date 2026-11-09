@@ -18,7 +18,8 @@ export default withAuth(
       "/home/time",
       "/home/medias",
       "/home/devis",
-      "/home/alert"
+      "/home/alert",
+      "/home/tickets"
     ];
 
     const adminsRoutes = [
@@ -29,7 +30,8 @@ export default withAuth(
       "/home/time",
       "/home/medias",
       "/home/devis",
-      "/home/alert"
+      "/home/alert",
+      "/home/tickets"
     ];
 
     const marketingRoutes = [
@@ -37,12 +39,14 @@ export default withAuth(
       "/home/offices",
       "/home/report",
       "/home/medias",
-      "/home/settings"
+      "/home/settings",
+      "/home/tickets"
     ];
 
     const adminOfficeRoutes = [
       "/home/office",
-      "/home/settings"
+      "/home/settings",
+      "/home/tickets"
     ];
 
 

@@ -69,6 +69,9 @@ const Home = () => {
     const [openUnpreview, setOpenUnpreview] = useState(false);
     const [openPublish, setOpenPublish] = useState(false);
     const [openUnpublish, setOpenUnpublish] = useState(false);
+    // Publication / dépublication de toutes les devises en une fois.
+    const [openPublishAll, setOpenPublishAll] = useState(false);
+    const [openUnpublishAll, setOpenUnpublishAll] = useState(false);
     const [devisToEdit, setdevisToEdit] = useState<Sentence>();
 
     useEffect(() => {
@@ -159,6 +162,19 @@ const Home = () => {
         resetPublishOfficeIds();
     };
 
+    const handleOpenPublishAll = () => {
+        resetPublishOfficeIds();
+        setOpenPublishAll(true);
+    };
+
+    const handleClosePublishAll = () => {
+        setOpenPublishAll(false);
+        resetPublishOfficeIds();
+    };
+
+    const handleOpenUnpublishAll = () => setOpenUnpublishAll(true);
+    const handleCloseUnpublishAll = () => setOpenUnpublishAll(false);
+
     const handleOpenUnpublish = (devis: Sentence) => {
         setdevisToEdit(devis);
         setOpenUnpublish(true);
@@ -216,6 +232,80 @@ const Home = () => {
             setLoading(false);
         }
     }
+
+    /**
+     * Publie toutes les devises vers les mêmes agences cibles.
+     *
+     * Les appels sont menés de front puis comptés : une devise en échec ne doit
+     * pas empêcher les autres de partir, et le compte rendu doit dire
+     * exactement ce qui est passé.
+     */
+    const publishAllDevis = async () => {
+        const devises = fetchedCurrency ?? [];
+        if (devises.length === 0) return;
+
+        const officeIds = Array.from(publishOfficeIds);
+        handleClosePublishAll();
+        setLoading(true);
+        try {
+            const results = await Promise.allSettled(
+                devises.map((devis) =>
+                    axiosAuth.put(`/sentence/publish/${devis.id}`, { officeIds })
+                )
+            );
+            const failed = results.filter((result) => result.status === "rejected").length;
+
+            if (failed === 0) {
+                toast.success(`${devises.length} devise(s) publiée(s)!`, { duration: 3000, className: " text-xs" });
+            } else if (failed < devises.length) {
+                toast.error(`${devises.length - failed} publiée(s), ${failed} en échec.`, { duration: 4000, className: " text-xs" });
+            } else {
+                toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+            }
+            mutate();
+        } catch (error) {
+            toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    /**
+     * Retire la publication de toutes les devises.
+     *
+     * `PUT /sentence/:id` bascule l'état : on ne l'appelle donc que sur les
+     * devises effectivement publiées, sinon il publierait les autres.
+     */
+    const unpublishAllDevis = async () => {
+        const published = (fetchedCurrency ?? []).filter((devis) => devis.selected);
+        handleCloseUnpublishAll();
+
+        if (published.length === 0) {
+            toast('Aucune devise publiée.', { duration: 3000, className: " text-xs" });
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const results = await Promise.allSettled(
+                published.map((devis) => axiosAuth.put(`/sentence/${devis.id}`))
+            );
+            const failed = results.filter((result) => result.status === "rejected").length;
+
+            if (failed === 0) {
+                toast.success(`${published.length} publication(s) retirée(s)!`, { duration: 3000, className: " text-xs" });
+            } else if (failed < published.length) {
+                toast.error(`${published.length - failed} retirée(s), ${failed} en échec.`, { duration: 4000, className: " text-xs" });
+            } else {
+                toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+            }
+            mutate();
+        } catch (error) {
+            toast.error('Une erreur est survenue, réessayer!', { duration: 3000, className: " text-xs" });
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const onSubmit = useCallback(async (data: FormData) => {
         try {
@@ -400,15 +490,38 @@ const Home = () => {
         </div>
     );
 
+    // Nombre de devises effectivement publiées : conditionne « Tout dépublier »
+    // et sert de compte rendu dans la confirmation.
+    const publishedCount = (fetchedCurrency ?? []).filter((devis) => devis.selected).length;
+
     if (isLoading || loading || error) {
         return <Loader />
     }
 
     return (
         <div className='bg-slate-100 h-screen  w-full rounded-t-xl p-4 overflow-auto'>
-            <button className=" px-4 py-2 bg-black flex items-center gap-2 text-white text-xs rounded-md" onClick={handleOpen}>
-                <IoIosAddCircle /> <p>Nouvelle</p>
-            </button>
+            <div className=" flex flex-wrap items-center gap-2">
+                <button className=" px-4 py-2 bg-black flex items-center gap-2 text-white text-xs rounded-md" onClick={handleOpen}>
+                    <IoIosAddCircle /> <p>Nouvelle</p>
+                </button>
+                {/* Actions globales : évitent de répéter le geste devise par devise. */}
+                <button
+                    disabled={(fetchedCurrency ?? []).length === 0}
+                    className=" px-4 py-2 bg-blue-600 flex items-center gap-2 text-white text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleOpenPublishAll}
+                    title="Publier toutes les devises sur le réseau"
+                >
+                    <MdPublish size={16} /> <p>Tout publier</p>
+                </button>
+                <button
+                    disabled={publishedCount === 0}
+                    className=" px-4 py-2 bg-red-600 flex items-center gap-2 text-white text-xs rounded-md disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleOpenUnpublishAll}
+                    title="Retirer la publication de toutes les devises"
+                >
+                    <MdUnpublished size={16} /> <p>Tout dépublier</p>
+                </button>
+            </div>
             {fetchedCurrency!.length > 0 ? <table className="w-full table-fixed">
                 <thead>
                     <tr className="">
@@ -574,6 +687,46 @@ const Home = () => {
                     <div className=' py-4 flex items-center justify-center gap-3'>
                         <button className=' bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={publishDevis}>Publier</button>
                         <button className=' bg-red-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={handleClosePublish}>Annuler</button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={openPublishAll}
+                onClose={handleClosePublishAll}
+                aria-labelledby="simple-modal-title"
+                aria-describedby="simple-modal-description"
+            >
+                <div className=' w-1/3 max-w-md bg-white p-4 rounded-lg mx-auto my-12'>
+                    <p className=' text-sm font-semibold py-2'>Tout publier</p>
+                    <p className=' text-xs text-center text-gray-600'>
+                        Les <strong>{(fetchedCurrency ?? []).length}</strong> devises seront publiées sur les mêmes agences.
+                    </p>
+                    {officePicker}
+                    <div className=' py-4 flex items-center justify-center gap-3'>
+                        <button className=' bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={publishAllDevis}>Tout publier</button>
+                        <button className=' bg-red-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={handleClosePublishAll}>Annuler</button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal
+                open={openUnpublishAll}
+                onClose={handleCloseUnpublishAll}
+                aria-labelledby="simple-modal-title"
+                aria-describedby="simple-modal-description"
+            >
+                <div className=' w-1/3 max-w-md bg-white p-4 rounded-lg mx-auto my-12'>
+                    <p className=' text-sm font-semibold py-2'>Tout dépublier</p>
+                    <p className=' text-xs font-semibold text-center'>
+                        Voulez-vous retirer la publication des <strong>{publishedCount}</strong> devise(s) publiée(s) ?
+                    </p>
+                    <p className=' text-[10px] text-gray-500 text-center mt-1'>
+                        Elles ne seront plus diffusées sur les afficheurs des agences.
+                    </p>
+                    <div className=' py-4 flex items-center justify-center gap-3'>
+                        <button className=' bg-green-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={unpublishAllDevis}>Oui</button>
+                        <button className=' bg-red-500 text-white text-sm font-semibold py-2 px-3 rounded-md' onClick={handleCloseUnpublishAll}>Non</button>
                     </div>
                 </div>
             </Modal>
